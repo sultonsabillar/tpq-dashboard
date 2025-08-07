@@ -78,13 +78,14 @@ const navigation = [
   },
 ];
 
-import { useState } from 'react';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Menu, X } from 'lucide-react';
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [openTPQ, setOpenTPQ] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(false); // for mobile drawer
 
   // Reset TPQ state when navigating to non-TPQ pages
   useEffect(() => {
@@ -92,6 +93,7 @@ export function Sidebar() {
     if (currentPage && !currentPage.levels) {
       setOpenTPQ(null);
     }
+    setIsOpen(false); // close drawer on route change
   }, [pathname]);
 
   const handleTPQClick = (item: any) => {
@@ -100,82 +102,172 @@ export function Sidebar() {
     } else {
       setOpenTPQ(item.name);
     }
-    // Always navigate to TPQ page for better UX
     router.push(item.href);
+    setIsOpen(false);
   };
 
   const handleMenuClick = (href: string) => {
-    // Reset TPQ state when navigating to non-TPQ pages
     setOpenTPQ(null);
-    // Always navigate for smooth UX, even if on same page
     router.push(href);
+    setIsOpen(false);
   };
 
   return (
-    <div className="flex h-full w-64 flex-col bg-gray-900">
-      <div className="flex h-16 items-center justify-center border-b border-gray-800">
-        <h1 className="text-xl font-bold text-white">TPQ Dashboard</h1>
-      </div>
-      <nav className="flex-1 space-y-1 p-4">
-        {navigation.map((item) => {
-          const isTPQ = !!item.levels;
-          const isActive = pathname === item.href;
-          const isOpen = isTPQ && openTPQ === item.name;
-          return (
-            <div key={item.name}>
-              {isTPQ ? (
-                <button
-                  type="button"
-                  onClick={() => handleTPQClick(item)}
-                  className={cn(
-                    'w-full text-left group flex items-center rounded-md px-2 py-2 text-sm font-medium',
-                    (isActive || isOpen)
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                  )}
-                >
-                  <item.icon
-                    className={cn(
-                      'mr-3 h-5 w-5 flex-shrink-0',
-                      (isActive || isOpen) ? 'text-white' : 'text-gray-400 group-hover:text-white'
-                    )}
-                  />
-                  {item.name}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleMenuClick(item.href)}
-                  className={cn(
-                    'w-full text-left group flex items-center rounded-md px-2 py-2 text-sm font-medium',
-                    isActive
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                  )}
-                >
-                  <item.icon
-                    className={cn(
-                      'mr-3 h-5 w-5 flex-shrink-0',
-                      isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'
-                    )}
-                  />
-                  {item.name}
-                </button>
-              )}
-              {/* Collapsible submenu for TPQ dihilangkan */}
+    <>
+      {/* Burger button for mobile */}
+      <button
+        className="fixed top-4 left-4 z-50 p-2 rounded-md bg-gray-900 text-white md:hidden focus:outline-none focus:ring-2 focus:ring-blue-400"
+        onClick={() => setIsOpen(true)}
+        aria-label="Open sidebar"
+      >
+        <Menu className="h-6 w-6" />
+      </button>
+
+      {/* Sidebar drawer for mobile */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          {/* Overlay */}
+          <div className="fixed inset-0 bg-black/40" onClick={() => setIsOpen(false)} />
+          {/* Drawer */}
+          <div className="relative w-64 h-full bg-gray-900 flex flex-col shadow-xl animate-slideInLeft">
+            <button
+              className="absolute top-4 left-4 p-2 rounded-md bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+              onClick={() => setIsOpen(false)}
+              aria-label="Close sidebar"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <div className="flex h-16 items-center justify-center border-b border-gray-800">
+              <h1 className="text-xl font-bold text-white ml-8">TPQ Dashboard</h1>
             </div>
-          );
-        })}
-      </nav>
-      <div className="border-t border-gray-800 p-4">
-        <div className="flex items-center">
-          <div className="h-8 w-8 rounded-full bg-gray-600"></div>
-          <div className="ml-3">
-            <p className="text-sm font-medium text-white">Admin TPQ</p>
-            <p className="text-xs text-gray-400">Administrator</p>
+            <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
+              {navigation.map((item) => {
+                const isTPQ = !!item.levels;
+                const isActive = pathname === item.href;
+                const isOpenTPQ = isTPQ && openTPQ === item.name;
+                return (
+                  <div key={item.name}>
+                    {isTPQ ? (
+                      <button
+                        type="button"
+                        onClick={() => handleTPQClick(item)}
+                        className={cn(
+                          'w-full text-left group flex items-center rounded-md px-2 py-2 text-sm font-medium',
+                          (isActive || isOpenTPQ)
+                            ? 'bg-gray-800 text-white'
+                            : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        )}
+                      >
+                        <item.icon
+                          className={cn(
+                            'mr-3 h-5 w-5 flex-shrink-0',
+                            (isActive || isOpenTPQ) ? 'text-white' : 'text-gray-400 group-hover:text-white'
+                          )}
+                        />
+                        {item.name}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleMenuClick(item.href)}
+                        className={cn(
+                          'w-full text-left group flex items-center rounded-md px-2 py-2 text-sm font-medium',
+                          isActive
+                            ? 'bg-gray-800 text-white'
+                            : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        )}
+                      >
+                        <item.icon
+                          className={cn(
+                            'mr-3 h-5 w-5 flex-shrink-0',
+                            isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'
+                          )}
+                        />
+                        {item.name}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
+            <div className="border-t border-gray-800 p-4">
+              <div className="flex items-center">
+                <div className="h-8 w-8 rounded-full bg-gray-600"></div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-white">Admin TPQ</p>
+                  <p className="text-xs text-gray-400">Administrator</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sidebar for desktop */}
+      <div className="hidden md:flex h-full w-64 flex-col bg-gray-900">
+        <div className="flex h-16 items-center justify-center border-b border-gray-800">
+          <h1 className="text-xl font-bold text-white">TPQ Dashboard</h1>
+        </div>
+        <nav className="flex-1 space-y-1 p-4">
+          {navigation.map((item) => {
+            const isTPQ = !!item.levels;
+            const isActive = pathname === item.href;
+            const isOpenTPQ = isTPQ && openTPQ === item.name;
+            return (
+              <div key={item.name}>
+                {isTPQ ? (
+                  <button
+                    type="button"
+                    onClick={() => handleTPQClick(item)}
+                    className={cn(
+                      'w-full text-left group flex items-center rounded-md px-2 py-2 text-sm font-medium',
+                      (isActive || isOpenTPQ)
+                        ? 'bg-gray-800 text-white'
+                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    )}
+                  >
+                    <item.icon
+                      className={cn(
+                        'mr-3 h-5 w-5 flex-shrink-0',
+                        (isActive || isOpenTPQ) ? 'text-white' : 'text-gray-400 group-hover:text-white'
+                      )}
+                    />
+                    {item.name}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleMenuClick(item.href)}
+                    className={cn(
+                      'w-full text-left group flex items-center rounded-md px-2 py-2 text-sm font-medium',
+                      isActive
+                        ? 'bg-gray-800 text-white'
+                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    )}
+                  >
+                    <item.icon
+                      className={cn(
+                        'mr-3 h-5 w-5 flex-shrink-0',
+                        isActive ? 'text-white' : 'text-gray-400 group-hover:text-white'
+                      )}
+                    />
+                    {item.name}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+        <div className="border-t border-gray-800 p-4">
+          <div className="flex items-center">
+            <div className="h-8 w-8 rounded-full bg-gray-600"></div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-white">Admin TPQ</p>
+              <p className="text-xs text-gray-400">Administrator</p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
