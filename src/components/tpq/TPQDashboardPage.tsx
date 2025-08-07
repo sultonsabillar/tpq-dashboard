@@ -1,3 +1,4 @@
+"use client";
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck, TrendingUp } from 'lucide-react';
@@ -213,7 +214,8 @@ export function TPQDashboardPage({
         </Card>
       </div>
 
-      {/* Tabel Data Generus per kelas */}
+
+      {/* Tabel Data Generus per kelas, dengan persentase kehadiran bulan ini */}
       <Card className="mt-4 border-0 shadow-lg">
         <CardHeader>
           <CardTitle className="text-blue-800 font-bold">Daftar Generus {selectedLevel} - TPQ {tpqGroup}</CardTitle>
@@ -229,19 +231,39 @@ export function TPQDashboardPage({
                   <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Tanggal Lahir</th>
                   <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Gender</th>
                   <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Sekolah</th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-green-700 uppercase">Absensi {new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' })}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-blue-100">
-                {students.map((s, idx) => (
-                  <tr key={s.id} className="hover:bg-blue-50">
-                    <td className="px-4 py-2 text-sm text-blue-900 font-semibold">{idx + 1}</td>
-                    <td className="px-4 py-2 text-sm text-blue-900">{s.name}</td>
-                    <td className="px-4 py-2 text-sm text-blue-900">{s.parentName}</td>
-                    <td className="px-4 py-2 text-sm text-blue-900">{s.dateOfBirth}</td>
-                    <td className="px-4 py-2 text-sm text-blue-900">{s.gender}</td>
-                    <td className="px-4 py-2 text-sm text-blue-900">{s.schoolLevel}</td>
-                  </tr>
-                ))}
+                {students.map((s, idx) => {
+                  // Hitung persentase kehadiran bulan ini untuk setiap generus
+                  const now = new Date();
+                  const currentMonth = now.getMonth();
+                  const currentYear = now.getFullYear();
+                  const absensiBulanIni = attendance.filter(a => {
+                    if (a.studentId !== s.id) return false;
+                    const tgl = new Date(a.date);
+                    return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
+                  });
+                  const totalHariAbsen = attendance.filter(a => {
+                    if (a.studentId !== s.id) return false;
+                    const tgl = new Date(a.date);
+                    return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
+                  }).length;
+                  // Persentase hadir = hadir/total absen bulan ini
+                  const persenHadir = totalHariAbsen > 0 ? Math.round((absensiBulanIni.length / totalHariAbsen) * 100) : 0;
+                  return (
+                    <tr key={s.id} className="hover:bg-blue-50">
+                      <td className="px-4 py-2 text-sm text-blue-900 font-semibold">{idx + 1}</td>
+                      <td className="px-4 py-2 text-sm text-blue-900">{s.name}</td>
+                      <td className="px-4 py-2 text-sm text-blue-900">{s.parentName}</td>
+                      <td className="px-4 py-2 text-sm text-blue-900">{s.dateOfBirth}</td>
+                      <td className="px-4 py-2 text-sm text-blue-900">{s.gender}</td>
+                      <td className="px-4 py-2 text-sm text-blue-900">{s.schoolLevel}</td>
+                      <td className="px-4 py-2 text-sm text-green-700 font-bold">{persenHadir}%</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             {students.length === 0 && (
