@@ -1,109 +1,97 @@
 
-'use client';
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+"use client";
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, Filter } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+// import { Button } from '@/components/ui/button';
+// import { Input } from '@/components/ui/input';
+// import { Plus, Search, Filter } from 'lucide-react';
 
 import { Student } from '@/types';
 import { getInitials, getLevelBadgeClass, getTPQBadgeClass } from '@/lib/utils';
 import { StudentForm } from '@/components/students/student-form';
+// import { StudentForm } from '@/components/students/student-form';
 
 
 export default function GenerusPage() {
-  // Paket levels
-  const levels = ['all', 'Pra PAUD', 'PAUD', 'Paket A1', 'Paket A2', 'Paket B', 'Paket C', 'Paket D'];
-  // Mock data
-  const [students, setStudents] = useState<Student[]>([
-    {
-      id: 'TPQ/JTL/20150315',
-      nomorInduk: 'TPQ/JTL/20150315',
-      name: 'Ahmad Fauzan',
-      parentName: 'Bapak Ahmad Ridwan',
-      dateOfBirth: '2015-03-15',
-      age: 10,
-      gender: 'Laki-laki',
-      tpqGroup: 'Jatilama',
-      schoolLevel: 'SD Kelas 4',
-      level: 'Paket A2',
-      isActive: true
-    },
-    {
-      id: 'TPQ/JTB/20130822',
-      nomorInduk: 'TPQ/JTB/20130822',
-      name: 'Siti Aisyah',
-      parentName: 'Ibu Fatimah Sari',
-      dateOfBirth: '2013-08-22',
-      age: 12,
-      gender: 'Perempuan',
-      tpqGroup: 'Jatibaru',
-      schoolLevel: 'SD Kelas 6',
-      level: 'Paket B',
-      isActive: true
-    },
-    {
-      id: 'TPQ/BUM/20141210',
-      nomorInduk: 'TPQ/BUM/20141210',
-      name: 'Muhammad Rizki',
-      parentName: 'Bapak Muhammad Yusuf',
-      dateOfBirth: '2014-12-10',
-      age: 11,
-      gender: 'Laki-laki',
-      tpqGroup: 'Bumimas',
-      schoolLevel: 'SD Kelas 5',
-      level: 'Paket A1',
-      isActive: true
-    },
-    {
-      id: 'TPQ/RWC/20160518',
-      nomorInduk: 'TPQ/RWC/20160518',
-      name: 'Fatimah Azzahra',
-      parentName: 'Ibu Khadijah',
-      dateOfBirth: '2016-05-18',
-      age: 9,
-      gender: 'Perempuan',
-      tpqGroup: 'Rawacana',
-      schoolLevel: 'SD Kelas 3',
-      level: 'PAUD',
-      isActive: true
-    },
-    {
-      id: 'TPQ/DES/20121125',
-      nomorInduk: 'TPQ/DES/20121125',
-      name: 'Abdullah Hasan',
-      parentName: 'Bapak Hasan Ali',
-      dateOfBirth: '2012-11-25',
-      age: 13,
-      gender: 'Laki-laki',
-      tpqGroup: 'Desa',
-      schoolLevel: 'SMP Kelas 1',
-      level: 'Paket C',
-      isActive: true
-    }
-  ]);
+  const levels = ['all', 'Pra PAUD', 'PAUD', 'Paket A', 'Paket B', 'Paket C', 'Paket D'];
+  const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLevel, setSelectedLevel] = useState('all');
+  useEffect(() => {
+    fetch('/api/students')
+      .then(res => res.json())
+      .then(data => {
+        setStudents(data.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          parentName: s.parentName,
+          dateOfBirth: s.dateOfBirth?.split('T')[0],
+          age: s.dateOfBirth ? (new Date().getFullYear() - new Date(s.dateOfBirth).getFullYear()) : 0,
+          gender: s.gender === 'Laki-laki' ? 'Laki-laki' : 'Perempuan',
+          tpqGroup: s.tpqGroup,
+          schoolLevel: s.schoolLevel,
+          level: s.level,
+          isActive: s.isActive !== undefined ? s.isActive : true,
+        })));
+      });
+  }, []);
 
-  const addStudent = (student: Student) => {
-    // Generate nomorInduk/id: TPQ/{TPQGROUP}/{YYYYMMDD}
-    const groupCode = student.tpqGroup?.slice(0,3).toUpperCase() || 'TPQ';
-    const dateStr = student.dateOfBirth?.replace(/-/g, '') || '00000000';
-    const nomorInduk = `TPQ/${groupCode}/${dateStr}`;
-    const newStudent = {
-      ...student,
-      nomorInduk,
-      id: nomorInduk
-    };
-    setStudents(prev => [...prev, newStudent]);
-  };
-  const updateStudent = (updatedStudent: Student) => {
-    setStudents(prev => prev.map(student => student.id === updatedStudent.id ? updatedStudent : student));
-  };
-  const deleteStudent = (studentId: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus generus ini?')) {
-      setStudents(prev => prev.filter(student => student.id !== studentId));
+  const addStudent = async (student: Student) => {
+    // Hanya kirim field yang valid ke backend
+    const { age, nomorInduk, ...studentData } = student;
+    // Pastikan dateOfBirth format ISO string
+    if (studentData.dateOfBirth) {
+      studentData.dateOfBirth = new Date(studentData.dateOfBirth).toISOString();
     }
+    const res = await fetch('/api/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(studentData),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      alert('Gagal menambah generus: ' + text);
+      return;
+    }
+    const newStudent = await res.json();
+    setStudents(prev => [...prev, {
+      ...newStudent,
+      dateOfBirth: newStudent.dateOfBirth?.split('T')[0],
+      age: newStudent.dateOfBirth ? (new Date().getFullYear() - new Date(newStudent.dateOfBirth).getFullYear()) : 0,
+      isActive: newStudent.isActive !== undefined ? newStudent.isActive : true,
+    }]);
+  };
+  const updateStudent = async (student: Student) => {
+    // Hanya kirim field yang valid ke backend
+    const { age, nomorInduk, ...studentData } = student;
+    // Pastikan dateOfBirth format ISO string
+    if (studentData.dateOfBirth) {
+      studentData.dateOfBirth = new Date(studentData.dateOfBirth).toISOString();
+    }
+    const res = await fetch('/api/students', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(studentData),
+    });
+    const updated = await res.json();
+    setStudents(prev => prev.map(s => s.id === updated.id ? {
+      ...updated,
+      dateOfBirth: updated.dateOfBirth?.split('T')[0],
+      age: updated.dateOfBirth ? (new Date().getFullYear() - new Date(updated.dateOfBirth).getFullYear()) : 0,
+      isActive: updated.isActive !== undefined ? updated.isActive : true,
+    } : s));
+  };
+  const deleteStudent = async (id: string) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus generus ini?')) return;
+    await fetch('/api/students', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    setStudents(prev => prev.filter(s => s.id !== id));
   };
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) || student.parentName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -156,7 +144,6 @@ export default function GenerusPage() {
                 </button>
               )}
             </div>
-            
             {/* Level Filter */}
             <div className="flex items-center gap-2 sm:min-w-[200px]">
               <div className="flex items-center gap-2 text-gray-700">
@@ -176,7 +163,6 @@ export default function GenerusPage() {
               </select>
             </div>
           </div>
-          
           {/* Search Results Info */}
           <div className="flex items-center justify-between pt-3 border-t border-gray-200/60">
             <div className="text-sm text-gray-600">
@@ -217,7 +203,7 @@ export default function GenerusPage() {
                 </div>
                 <p className="text-gray-500 font-medium">Tidak ada generus yang ditemukan</p>
                 <p className="text-sm text-gray-400 mt-1">
-                  {searchTerm ? 'Coba ubah kata kunci pencarian' : 'Tambah generus baru untuk memulai'}
+                  Tambah generus baru untuk memulai
                 </p>
               </div>
             ) : (
@@ -238,38 +224,31 @@ export default function GenerusPage() {
                           {getInitials(student.name)}
                         </span>
                       </div>
-                      
                       {/* Student Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="text-lg font-semibold text-gray-900 truncate">
                             {student.name}
                           </h3>
-                          <span className={`px-2 py-0.5 text-xs font-medium rounded-full flex-shrink-0 ${getLevelBadgeClass(student.level)}`}>
+          <span className={`px-2 py-0.5 text-xs font-medium rounded-full flex-shrink-0 ${getLevelBadgeClass(student.level || '')}`}>
                             {student.level}
                           </span>
                         </div>
-                        
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                          <div className="flex items-center gap-1">
-                            <span className="font-medium text-gray-700">ID:</span>
-                            <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">
-                              {student.nomorInduk}
-                            </span>
-                          </div>
+                          {/* ID/Nomor Induk dihapus sesuai permintaan */}
                           <div className="flex items-center gap-1">
                             <span className="font-medium text-gray-700">Wali:</span>
                             <span className="truncate">{student.parentName}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="font-medium text-gray-700">TPQ:</span>
-                            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getTPQBadgeClass(student.tpqGroup)}`}>
+            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getTPQBadgeClass(student.tpqGroup || '')}`}>
                               {student.tpqGroup}
                             </span>
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="font-medium text-gray-700">Info:</span>
-                            <span>{student.age} tahun • {student.gender}</span>
+                            <span>{student.dateOfBirth ? (new Date().getFullYear() - new Date(student.dateOfBirth).getFullYear()) : '-'} tahun • {student.gender}</span>
                           </div>
                           <div className="flex items-center gap-1 md:col-span-2">
                             <span className="font-medium text-gray-700">Sekolah:</span>
@@ -278,22 +257,23 @@ export default function GenerusPage() {
                         </div>
                       </div>
                     </div>
-                    
                     {/* Action Buttons */}
                     <div className="flex items-center space-x-3 ml-6 flex-shrink-0">
-                      <StudentForm
-                        student={student}
-                        onSave={updateStudent}
-                        trigger={
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="px-4 py-2 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-600 hover:text-blue-700 shadow-sm transition-all duration-200 font-medium"
-                          >
-                            Edit
-                          </Button>
-                        }
-                      />
+                      {student && (
+                        <StudentForm
+                          student={student}
+                          onSave={updateStudent}
+                          trigger={
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="px-4 py-2 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-600 hover:text-blue-700 shadow-sm transition-all duration-200 font-medium"
+                            >
+                              Edit
+                            </Button>
+                          }
+                        />
+                      )}
                       <Button 
                         variant="outline" 
                         size="sm" 

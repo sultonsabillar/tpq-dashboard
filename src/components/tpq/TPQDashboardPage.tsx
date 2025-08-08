@@ -3,11 +3,30 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck, TrendingUp } from 'lucide-react';
 
+export interface Student {
+  id: string;
+  name: string;
+  parentName: string;
+  dateOfBirth: string;
+  gender: string;
+  schoolLevel: string;
+  tpqGroup: string;
+  isActive: boolean;
+  level: string;
+}
+
+export interface Attendance {
+  id: string;
+  studentId: string;
+  date: string;
+  status: string;
+}
+
 interface TPQDashboardPageProps {
   tpqGroup: string;
   levels: string[];
-  mockStudents: any[];
-  mockProgressPerLevel: Record<string, { attendance: number; memorization: number }>;
+  students: Student[];
+  attendance: Attendance[];
   colors: {
     gradient: string;
     border: string;
@@ -23,52 +42,82 @@ interface TPQDashboardPageProps {
 export function TPQDashboardPage({
   tpqGroup,
   levels,
-  mockStudents,
-  mockProgressPerLevel,
+  students,
+  attendance: attendanceProp,
   colors,
   info,
 }: TPQDashboardPageProps) {
   const [selectedLevel, setSelectedLevel] = useState<string>(levels[0]);
-  const [attendance, setAttendance] = useState<{
-    id: string;
-    studentId: string;
-    date: string;
-    status: string;
-  }[]>([]);
   const [form, setForm] = useState<{ studentId: string; date: string; status: string }>({ studentId: '', date: '', status: '' });
+  const [attendance, setAttendance] = useState<Attendance[]>(attendanceProp);
 
   // Filter students untuk TPQ & level terpilih
-  const students = mockStudents.filter(
+  const studentsFiltered = students.filter(
     s => s.tpqGroup === tpqGroup && s.isActive && s.level === selectedLevel
   );
-  const totalSantri = mockStudents.filter(s => s.tpqGroup === tpqGroup && s.isActive).length;
-  const totalSantriLevel = students.length;
+  const totalSantri = students.filter(s => s.tpqGroup === tpqGroup && s.isActive).length;
+  const totalSantriLevel = studentsFiltered.length;
 
-  // Progress per kelas
-  const attendanceProgress = mockProgressPerLevel[selectedLevel]?.attendance ?? 0;
-  const memorizationProgress = mockProgressPerLevel[selectedLevel]?.memorization ?? 0;
+  // Progress per kelas (attendance & memorization dummy, can be replaced with real logic)
+  // For now, calculate attendanceProgress as average attendance % for this level this month
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const attendancePercents = studentsFiltered.map(s => {
+    const absensiBulanIni = attendance.filter(a => {
+      if (a.studentId !== s.id) return false;
+      const tgl = new Date(a.date);
+      return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
+    });
+    const totalHariAbsen = attendance.filter(a => {
+      if (a.studentId !== s.id) return false;
+      const tgl = new Date(a.date);
+      return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
+    }).length;
+    return totalHariAbsen > 0 ? absensiBulanIni.length / totalHariAbsen : 0;
+  });
+  const attendanceProgress = attendancePercents.length > 0 ? attendancePercents.reduce((a, b) => a + b, 0) / attendancePercents.length : 0;
+  // Memorization progress: placeholder (0)
+  const memorizationProgress = 0;
 
   // Absensi untuk level terpilih
   const attendanceForLevel = attendance.filter(a => {
-    const student = mockStudents.find(s => s.id === a.studentId);
+    const student = students.find(s => s.id === a.studentId);
     return student && student.tpqGroup === tpqGroup && student.level === selectedLevel;
   });
 
-  // CRUD handlers
+  // CRUD handlers (local state)
   function handleFormChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
   }
   function handleAddAttendance() {
-    if (!form.studentId || !form.date) return;
+    if (!form.studentId || !form.date || !form.status) return;
     setAttendance(prev => [
       ...prev,
-      { id: Date.now().toString(), studentId: form.studentId, date: form.date, status: form.status },
+      {
+        id: Date.now().toString(),
+        studentId: form.studentId,
+        date: form.date,
+        status: form.status,
+      },
     ]);
     setForm({ studentId: '', date: '', status: '' });
   }
   function handleDeleteAttendance(id: string) {
-    setAttendance(prev => prev.filter(a => a.id !== id));
-    setForm({ studentId: '', date: '', status: '' });
+    if (!confirm('Yakin ingin menghapus absensi ini?')) return;
+    fetch('/api/attendance', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+      .then(async res => {
+        if (res.ok) {
+          setAttendance(prev => prev.filter(a => a.id !== id));
+        } else {
+          const err = await res.json();
+          alert('Gagal menghapus absensi: ' + (err.error || 'Unknown error'));
+        }
+      });
   }
 
   return (
@@ -235,11 +284,8 @@ export function TPQDashboardPage({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-blue-100">
-                {students.map((s, idx) => {
+                {studentsFiltered.map((s, idx) => {
                   // Hitung persentase kehadiran bulan ini untuk setiap generus
-                  const now = new Date();
-                  const currentMonth = now.getMonth();
-                  const currentYear = now.getFullYear();
                   const absensiBulanIni = attendance.filter(a => {
                     if (a.studentId !== s.id) return false;
                     const tgl = new Date(a.date);
@@ -266,7 +312,7 @@ export function TPQDashboardPage({
                 })}
               </tbody>
             </table>
-            {students.length === 0 && (
+            {studentsFiltered.length === 0 && (
               <div className="text-center text-gray-400 py-8">Belum ada data generus untuk level ini.</div>
             )}
           </div>
@@ -298,7 +344,7 @@ export function TPQDashboardPage({
                   required
                 >
                   <option value="" disabled className="text-blue-700 italic bg-blue-50">Pilih Generus</option>
-                  {students.map(s => (
+                  {studentsFiltered.map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
@@ -363,7 +409,7 @@ export function TPQDashboardPage({
                     </tr>
                   )}
                   {attendanceForLevel.map((a, idx) => {
-                    const s = mockStudents.find(s => s.id === a.studentId);
+                    const s = students.find(s => s.id === a.studentId);
                     return (
                       <tr key={a.id} className="hover:bg-blue-50">
                         <td className="px-4 py-2 text-sm text-blue-900 font-semibold">{idx + 1}</td>

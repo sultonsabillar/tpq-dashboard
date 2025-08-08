@@ -1,21 +1,12 @@
-"use client";
-
-
-
-
-import { mockStudents } from '@/lib/mock-data';
-import { getTPQHeaderColors } from '@/lib/utils';
-import { TPQDashboardPage } from '@/components/tpq/TPQDashboardPage';
+import { getTPQHeaderColors } from '../../lib/utils';
+import { TPQDashboardPage, Student, Attendance } from '../../components/tpq/TPQDashboardPage';
+import { prisma } from '../../../lib/prisma';
 
 const TPQ_GROUP = 'Desa';
 const LEVELS = [
   'Paket C',
   'Paket D',
 ];
-const mockProgressPerLevel: Record<string, { attendance: number; memorization: number }> = {
-  'Paket C': { attendance: 0.84, memorization: 0.71 },
-  'Paket D': { attendance: 0.78, memorization: 0.66 },
-};
 const colors = getTPQHeaderColors(TPQ_GROUP);
 const info = {
   alamat: 'Desa Jati',
@@ -23,13 +14,21 @@ const info = {
   program: 'Tilawati, Akhlakul Karimah',
 };
 
-export default function TpqDesa() {
+export default async function TpqDesa() {
+  const students: Student[] = (await prisma.student.findMany()).map((s: any) => ({
+    ...s,
+    dateOfBirth: s.dateOfBirth.toISOString().split('T')[0],
+  }));
+  const attendance: Attendance[] = (await prisma.attendance.findMany()).map((a: any) => ({
+    ...a,
+    date: a.date.toISOString().split('T')[0],
+  }));
   return (
     <TPQDashboardPage
       tpqGroup={TPQ_GROUP}
       levels={LEVELS}
-      mockStudents={mockStudents}
-      mockProgressPerLevel={mockProgressPerLevel}
+      students={students}
+      attendance={attendance}
       colors={colors}
       info={info}
     />
