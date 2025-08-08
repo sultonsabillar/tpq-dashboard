@@ -1,16 +1,19 @@
+import { toZonedTime } from 'date-fns-tz';
+
 export async function POST(request: Request) {
   try {
     const { studentId, date, status, activityType } = await request.json();
     if (!studentId || !date || !status || !activityType) {
       return NextResponse.json({ error: 'studentId, date, status, dan activityType wajib diisi' }, { status: 400 });
     }
-    // Pastikan date dalam format ISO DateTime
-    // Konversi yyyy-mm-dd ke Date (tanpa waktu, jam 00:00:00 lokal)
-    let dateObj: Date | null = null;
+    // Pastikan date dalam format yyyy-mm-dd dan konversi ke waktu Asia/Jakarta
+    let dateObj: Date;
     try {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Invalid date format');
-      const [year, month, day] = date.split('-').map(Number);
-      dateObj = new Date(year, month - 1, day); // bulan 0-based
+      // Buat objek Date dari string tanggal (anggap jam 00:00 UTC)
+      const utcDate = new Date(`${date}T00:00:00Z`);
+      // Konversi ke waktu Jakarta (tidak akan mundur)
+      dateObj = toZonedTime(utcDate, 'Asia/Jakarta');
     } catch {
       return NextResponse.json({ error: 'Format tanggal tidak valid (yyyy-mm-dd)' }, { status: 400 });
     }

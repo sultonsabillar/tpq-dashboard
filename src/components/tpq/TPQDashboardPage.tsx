@@ -549,7 +549,7 @@ export function TPQDashboardPage({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto bg-white/90 border border-blue-200 rounded-lg shadow p-2">
+            <div className="overflow-x-auto bg-white/90 border border-blue-200 rounded-lg shadow p-2" style={{ maxHeight: 400, overflowY: 'auto' }}>
               <table className="min-w-full divide-y divide-blue-200">
                 <thead className="bg-blue-100">
                   <tr>
