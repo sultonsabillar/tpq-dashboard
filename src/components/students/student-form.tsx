@@ -78,7 +78,12 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
   };
 
   const handleChange = (field: keyof Student, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Untuk field name dan parentName, selalu uppercase
+    let newValue = value;
+    if (field === 'name' || field === 'parentName') {
+      newValue = value.toUpperCase();
+    }
+    setFormData(prev => ({ ...prev, [field]: newValue }));
   };
 
   return (
@@ -145,6 +150,7 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
                   onChange={(e) => handleChange('name', e.target.value)}
                   placeholder="Masukkan nama lengkap"
                   className="border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
+                  style={{ textTransform: 'uppercase' }}
                 />
               </div>
               
@@ -159,6 +165,7 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
                   onChange={(e) => handleChange('parentName', e.target.value)}
                   placeholder="Nama ayah/ibu/wali"
                   className="border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
+                  style={{ textTransform: 'uppercase' }}
                 />
               </div>
             </div>
