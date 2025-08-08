@@ -51,25 +51,17 @@ export function TPQDashboardPage({
   const [selectedLevel, setSelectedLevel] = useState<string>(levels[0]);
   const [form, setForm] = useState<{ studentId: string; date: string; status: string; kegiatan?: string }>({ studentId: '', date: '', status: '', kegiatan: '' });
   const [attendance, setAttendance] = useState<Attendance[]>(attendanceProp);
-  // Dropdown bulan
-  // Ambil semua bulan unik dari data absensi
-  let monthOptions = Array.from(new Set(attendance.map(a => {
-    const tgl = new Date(a.date);
-    return `${tgl.getFullYear()}-${tgl.getMonth()}`;
-  }))).sort((a, b) => b.localeCompare(a));
-  // Jika kosong, tambahkan bulan ini
-  if (monthOptions.length === 0) {
-    const now = new Date();
-    monthOptions = [`${now.getFullYear()}-${now.getMonth()}`];
-  }
-  // Label bulan
+  // Dropdown bulan: selalu tampilkan 12 bulan dalam setahun (Januari-Desember tahun berjalan)
+  const now = new Date();
+  const currentYearNum = now.getFullYear();
+  const monthOptions = Array.from({ length: 12 }, (_, i) => `${currentYearNum}-${String(i + 1).padStart(2, '0')}`);
+  // Label bulan (tanpa tahun)
   function getMonthLabel(val: string) {
-    const [year, month] = val.split('-');
-    return new Date(Number(year), Number(month)).toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+    const [, month] = val.split('-');
+    return new Date(2000, Number(month) - 1).toLocaleString('id-ID', { month: 'long' });
   }
   // State bulan terpilih
-  const now = new Date();
-  const currentMonthKey = `${now.getFullYear()}-${now.getMonth()}`;
+  const currentMonthKey = `${currentYearNum}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   // Jika ada data, default ke bulan terbaru, jika tidak, default ke bulan saat ini
   const [selectedMonth, setSelectedMonth] = useState<string>(monthOptions.length > 0 ? monthOptions[0] : currentMonthKey);
 
@@ -93,13 +85,13 @@ export function TPQDashboardPage({
       if (a.studentId !== s.id) return false;
       if (!('activityType' in a) || a.activityType !== 'KBM') return false;
       const tgl = new Date(a.date);
-      return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
+  return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
     });
     const totalHariAbsen = attendance.filter(a => {
       if (a.studentId !== s.id) return false;
       if (!('activityType' in a) || a.activityType !== 'KBM') return false;
       const tgl = new Date(a.date);
-      return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
+  return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear;
     }).length;
     return totalHariAbsen > 0 ? absensiBulanIni.length / totalHariAbsen : 0;
   });
@@ -112,13 +104,13 @@ export function TPQDashboardPage({
       if (a.studentId !== s.id) return false;
       if (!('activityType' in a) || a.activityType !== 'KBM') return false;
       const tgl = new Date(a.date);
-      return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
+  return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
     });
     const totalHariAbsen = attendance.filter(a => {
       if (a.studentId !== s.id) return false;
       if (!('activityType' in a) || a.activityType !== 'KBM') return false;
       const tgl = new Date(a.date);
-      return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
+  return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear;
     }).length;
     return totalHariAbsen > 0 ? absensiBulanIni.length / totalHariAbsen : 0;
   });
@@ -130,13 +122,13 @@ export function TPQDashboardPage({
       if (a.studentId !== s.id) return false;
       if (!('activityType' in a) || a.activityType !== 'KHQ') return false;
       const tgl = new Date(a.date);
-      return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
+  return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
     });
     const totalHariAbsen = attendance.filter(a => {
       if (a.studentId !== s.id) return false;
       if (!('activityType' in a) || a.activityType !== 'KHQ') return false;
       const tgl = new Date(a.date);
-      return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
+  return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear;
     }).length;
     return totalHariAbsen > 0 ? absensiBulanIni.length / totalHariAbsen : 0;
   });
@@ -149,7 +141,7 @@ export function TPQDashboardPage({
     const student = students.find(s => s.id === a.studentId);
     if (!student || student.tpqGroup !== tpqGroup || student.level !== selectedLevel) return false;
     const tgl = new Date(a.date);
-    return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
+    return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear;
   });
 
   // CRUD handlers (local state)
@@ -359,6 +351,20 @@ export function TPQDashboardPage({
           <CardTitle className="text-blue-800 font-bold">Daftar Generus {selectedLevel} - TPQ {tpqGroup}</CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Dropdown bulan untuk tabel generus */}
+          <div className="mb-4 flex items-center gap-2">
+            <label className="text-xs font-semibold text-blue-700">Bulan</label>
+            <select
+              value={selectedMonth}
+              onChange={e => setSelectedMonth(e.target.value)}
+              className="px-2 py-1 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-200 text-sm"
+              style={{ color: '#1d4ed8', backgroundColor: '#eff6ff' }}
+            >
+              {monthOptions.map(val => (
+                <option key={val} value={val} className="text-blue-700 italic bg-blue-50">{getMonthLabel(val)}</option>
+              ))}
+            </select>
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-blue-200">
               <thead className="bg-blue-50">
@@ -369,8 +375,14 @@ export function TPQDashboardPage({
                   <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Umur</th>
                   <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Gender</th>
                   <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Sekolah</th>
-                  <th className="px-4 py-2 text-left text-xs font-bold text-green-700 uppercase">KBM {new Date().toLocaleString('id-ID', { month: 'long' })}</th>
-                  <th className="px-4 py-2 text-left text-xs font-bold text-purple-700 uppercase">KHQ {new Date().toLocaleString('id-ID', { month: 'long' })}</th>
+                  {(() => {
+                    const [year, month] = selectedMonth.split('-');
+                    const selectedMonthLabel = new Date(Number(year), Number(month) - 1).toLocaleString('id-ID', { month: 'long' });
+                    return <>
+                      <th className="px-4 py-2 text-left text-xs font-bold text-green-700 uppercase">KBM {selectedMonthLabel}</th>
+                      <th className="px-4 py-2 text-left text-xs font-bold text-purple-700 uppercase">KHQ {selectedMonthLabel}</th>
+                    </>;
+                  })()}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-blue-100">
@@ -380,13 +392,13 @@ export function TPQDashboardPage({
                     if (a.studentId !== s.id) return false;
                     if (!('activityType' in a) || a.activityType !== 'KBM') return false;
                     const tgl = new Date(a.date);
-                    return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
+                    return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
                   });
                   const totalKBM = attendance.filter(a => {
                     if (a.studentId !== s.id) return false;
                     if (!('activityType' in a) || a.activityType !== 'KBM') return false;
                     const tgl = new Date(a.date);
-                    return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
+                    return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear;
                   }).length;
                   const persenKBM = totalKBM > 0 ? Math.round((absensiKBM.length / totalKBM) * 100) : 0;
 
@@ -395,13 +407,13 @@ export function TPQDashboardPage({
                     if (a.studentId !== s.id) return false;
                     if (!('activityType' in a) || a.activityType !== 'KHQ') return false;
                     const tgl = new Date(a.date);
-                    return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
+                    return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
                   });
                   const totalKHQ = attendance.filter(a => {
                     if (a.studentId !== s.id) return false;
                     if (!('activityType' in a) || a.activityType !== 'KHQ') return false;
                     const tgl = new Date(a.date);
-                    return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
+                    return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear;
                   }).length;
                   const persenKHQ = totalKHQ > 0 ? Math.round((absensiKHQ.length / totalKHQ) * 100) : 0;
 
@@ -527,23 +539,16 @@ export function TPQDashboardPage({
         {/* Card Tabel Absensi */}
         <Card className="border-0 shadow-lg md:col-span-2">
           <CardHeader>
-            <CardTitle className="text-blue-800 font-bold text-base">Daftar Absensi {selectedLevel}</CardTitle>
+            <CardTitle className="text-blue-800 font-bold text-base flex items-center gap-2">
+              <span>Daftar Absensi {selectedLevel}</span>
+              {selectedMonth && (
+                <span className="text-blue-800 font-bold text-base">
+                  (Bulan {getMonthLabel(selectedMonth)})
+                </span>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Dropdown bulan */}
-            <div className="mb-4 flex items-center gap-2">
-              <label className="text-xs font-semibold text-blue-700">Bulan</label>
-              <select
-                value={selectedMonth}
-                onChange={e => setSelectedMonth(e.target.value)}
-                className="px-2 py-1 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-200 text-sm"
-                style={{ color: '#1d4ed8', backgroundColor: '#eff6ff' }}
-              >
-                {monthOptions.map(val => (
-                  <option key={val} value={val} className="text-blue-700 italic bg-blue-50">{getMonthLabel(val)}</option>
-                ))}
-              </select>
-            </div>
             <div className="overflow-x-auto bg-white/90 border border-blue-200 rounded-lg shadow p-2">
               <table className="min-w-full divide-y divide-blue-200">
                 <thead className="bg-blue-100">

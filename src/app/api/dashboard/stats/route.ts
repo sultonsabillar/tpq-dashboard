@@ -1,13 +1,26 @@
 import { prisma } from '@/lib/prisma';
+import { toZonedTime } from 'date-fns-tz';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
-  try {
-    // Hitung awal dan akhir bulan ini
+export async function GET(req: Request) {
+  // Ambil bulan dari query, default ke bulan ini jika tidak ada
+  const { searchParams } = new URL(req.url);
+  const monthParam = searchParams.get('month'); // format: YYYY-MM
+  let year, month;
+  if (monthParam) {
+    [year, month] = monthParam.split('-').map(Number);
+  } else {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+    year = now.getFullYear();
+    month = now.getMonth() + 1;
+  }
+  try {
+  // Hitung awal dan akhir bulan terpilih (Asia/Jakarta)
+  const timeZone = 'Asia/Jakarta';
+  const startOfMonth = toZonedTime(new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00`), timeZone);
+  const startOfNextMonth = toZonedTime(new Date(`${month === 12 ? year + 1 : year}-${String(month === 12 ? 1 : month + 1).padStart(2, '0')}-01T00:00:00`), timeZone);
+  const startOfLastMonth = toZonedTime(new Date(`${month === 1 ? year - 1 : year}-${String(month === 1 ? 12 : month - 1).padStart(2, '0')}-01T00:00:00`), timeZone);
+  const endOfLastMonth = toZonedTime(new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00`), timeZone);
 
     // Total generus bulan ini
     const totalStudents = await prisma.student.count();
@@ -62,34 +75,23 @@ export async function GET() {
     let percentSum = 0;
     let count = 0;
     for (const student of activeStudentList) {
-      // Ambil semua tanggal unik pertemuan KBM bulan ini untuk santri ini
-      const uniqueKBMDates = await prisma.attendance.findMany({
+      // Semua absensi KBM bulan terpilih untuk santri ini (status apapun)
+      const allKBM = await prisma.attendance.findMany({
         where: {
           studentId: student.id,
           date: {
-            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-            lte: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
+            gte: startOfMonth,
+            lt: startOfNextMonth,
           },
           activityType: 'KBM',
         },
-        select: { date: true },
-        distinct: ['date'],
+        select: { status: true },
       });
-      const pertemuanCount = uniqueKBMDates.length;
-      if (pertemuanCount === 0) continue;
-      // Hitung jumlah hadir KBM bulan ini untuk santri ini
-      const hadirCount = await prisma.attendance.count({
-        where: {
-          studentId: student.id,
-          date: {
-            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-            lte: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
-          },
-          activityType: 'KBM',
-          status: 'Hadir',
-        },
-      });
-      percentSum += hadirCount / pertemuanCount;
+      const pertemuanCount = allKBM.length;
+      const hadirCount = allKBM.filter(a => a.status === 'Hadir').length;
+      const persen = pertemuanCount > 0 ? hadirCount / pertemuanCount : 0;
+      console.log(`Santri ${student.id}: pertemuan=${pertemuanCount}, hadir=${hadirCount}, persen=${persen}`);
+      percentSum += persen;
       count++;
     }
     const attendanceRateMonth = count > 0 ? Math.round((percentSum / count) * 100) : 0;
@@ -100,10 +102,9 @@ export async function GET() {
       distinct: ['tpqGroup'],
     });
     const totalClasses = groupResult.length;
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
+    // Hitung kehadiran hari pertama bulan terpilih (bisa diganti sesuai kebutuhan)
+    const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+    const end = new Date(year, month - 1, 1, 23, 59, 59, 999);
     const todayAttendance = await prisma.attendance.count({
       where: {
         date: {

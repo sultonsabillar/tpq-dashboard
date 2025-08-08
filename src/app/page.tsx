@@ -15,6 +15,16 @@ interface DashboardStats {
 }
 
 export default function Dashboard() {
+  // Dropdown bulan: 12 bulan tahun berjalan
+  const now = new Date();
+  const currentYearNum = now.getFullYear();
+  const monthOptions = Array.from({ length: 12 }, (_, i) => `${currentYearNum}-${String(i + 1).padStart(2, '0')}`);
+  function getMonthLabel(val: string) {
+    const [, month] = val.split('-');
+    return new Date(2000, Number(month) - 1).toLocaleString('id-ID', { month: 'long' });
+  }
+  const currentMonthKey = `${currentYearNum}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const [selectedMonth, setSelectedMonth] = useState<string>(monthOptions[0]);
   const [stats, setStats] = useState<DashboardStats>({
     totalStudents: 0,
     activeStudents: 0,
@@ -29,17 +39,17 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function fetchStats() {
-      // Fetch dashboard stats from API (real DB)
+      // Fetch dashboard stats dari API sesuai bulan terpilih
       try {
-        const res = await fetch('/api/dashboard/stats');
+        const res = await fetch(`/api/dashboard/stats?month=${selectedMonth}`);
         const data = await res.json();
         setStats(data);
       } catch (e) {
         console.error('Error fetching dashboard stats:', e);
       }
-      // Fetch level stats
+      // Fetch level stats sesuai bulan terpilih (jika API support, tambahkan query month)
       try {
-        const res = await fetch('/api/students/levels');
+        const res = await fetch(`/api/students/levels?month=${selectedMonth}`);
         if (res.ok) {
           const data = await res.json();
           setLevelStats(data);
@@ -50,7 +60,7 @@ export default function Dashboard() {
       setLoading(false);
     }
     fetchStats();
-  }, []);
+  }, [selectedMonth]);
 
   const statCards = [
     {
@@ -121,6 +131,20 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Dropdown bulan global */}
+      <div className="mb-4 flex items-center gap-2">
+        <label className="text-xs font-semibold text-green-700">Bulan</label>
+        <select
+          value={selectedMonth}
+          onChange={e => setSelectedMonth(e.target.value)}
+          className="px-2 py-1 border border-green-300 rounded focus:outline-none focus:ring-2 focus:ring-green-200 text-sm"
+          style={{ color: '#047857', backgroundColor: '#f0fdf4' }}
+        >
+          {monthOptions.map(val => (
+            <option key={val} value={val} className="text-green-700 italic bg-green-50">{getMonthLabel(val)}</option>
+          ))}
+        </select>
+      </div>
       {/* Header */}
       <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-100">
         <div className="flex items-center justify-between">
