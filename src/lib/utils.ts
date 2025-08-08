@@ -20,8 +20,7 @@ export function getLevelBadgeClass(level: string): string {
       return 'bg-blue-100 text-blue-800';
     case 'Paket B':
       return 'bg-yellow-100 text-yellow-800';
-    case 'Paket A1':
-    case 'Paket A2':
+    case 'Paket A':
       return 'bg-purple-100 text-purple-800';
     case 'PAUD':
       return 'bg-pink-100 text-pink-800';
@@ -232,7 +231,7 @@ export const DAYS_OF_WEEK = [
 ] as const;
 
 export const LEVELS = [
-  'Pra PAUD', 'PAUD', 'Paket A1', 'Paket A2', 'Paket B', 'Paket C', 'Paket D'
+  'Pra PAUD', 'PAUD', 'Paket A', 'Paket B', 'Paket C', 'Paket D'
 ] as const;
 
 export const TPQ_GROUPS = [

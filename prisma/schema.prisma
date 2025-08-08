@@ -1,0 +1,33 @@
+// Prisma schema for TPQ Dashboard
+// DB: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id           String   @id @default(uuid())
+  name         String
+  parentName   String
+  dateOfBirth  DateTime
+  gender       String
+  schoolLevel  String
+  tpqGroup     String
+  level        String
+  isActive     Boolean @default(true)
+  attendances  Attendance[]
+}
+
+model Attendance {
+  id         String   @id @default(uuid())
+  student    Student  @relation(fields: [studentId], references: [id])
+  studentId  String
+  date       DateTime
+  status     String
+  createdAt  DateTime @default(now())
+}
