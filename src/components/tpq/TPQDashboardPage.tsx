@@ -48,22 +48,63 @@ export function TPQDashboardPage({
   info,
 }: TPQDashboardPageProps) {
   const [selectedLevel, setSelectedLevel] = useState<string>(levels[0]);
-  const [form, setForm] = useState<{ studentId: string; date: string; status: string }>({ studentId: '', date: '', status: '' });
+  const [form, setForm] = useState<{ studentId: string; date: string; status: string; kegiatan?: string }>({ studentId: '', date: '', status: '', kegiatan: '' });
   const [attendance, setAttendance] = useState<Attendance[]>(attendanceProp);
+  // Dropdown bulan
+  // Ambil semua bulan unik dari data absensi
+  let monthOptions = Array.from(new Set(attendance.map(a => {
+    const tgl = new Date(a.date);
+    return `${tgl.getFullYear()}-${tgl.getMonth()}`;
+  }))).sort((a, b) => b.localeCompare(a));
+  // Jika kosong, tambahkan bulan ini
+  if (monthOptions.length === 0) {
+    const now = new Date();
+    monthOptions = [`${now.getFullYear()}-${now.getMonth()}`];
+  }
+  // Label bulan
+  function getMonthLabel(val: string) {
+    const [year, month] = val.split('-');
+    return new Date(Number(year), Number(month)).toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+  }
+  // State bulan terpilih
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${now.getMonth()}`;
+  // Jika ada data, default ke bulan terbaru, jika tidak, kosong
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
 
   // Filter students untuk TPQ & level terpilih
   const studentsFiltered = students.filter(
     s => s.tpqGroup === tpqGroup && s.isActive && s.level === selectedLevel
   );
+  // Total generus aktif = semua generus aktif di group ini, TIDAK termasuk Pra PAUD
   const totalSantri = students.filter(s => s.tpqGroup === tpqGroup && s.isActive).length;
+  const totalSantriAktif = students.filter(s => s.tpqGroup === tpqGroup && s.isActive && s.level !== 'Pra PAUD').length;
   const totalSantriLevel = studentsFiltered.length;
 
   // Progress per kelas (attendance & memorization dummy, can be replaced with real logic)
-  // For now, calculate attendanceProgress as average attendance % for this level this month
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-  const attendancePercents = studentsFiltered.map(s => {
+  // Exclude Pra PAUD from progress calculation
+  const currentMonth = Number(selectedMonth.split('-')[1]);
+  const currentYear = Number(selectedMonth.split('-')[0]);
+  // Progress rata-rata kehadiran seluruh generus aktif (bukan Pra PAUD) di TPQ ini
+  const studentsAllActiveNoPraPaud = students.filter(s => s.tpqGroup === tpqGroup && s.isActive && s.level !== 'Pra PAUD');
+  const attendancePercentsAll = studentsAllActiveNoPraPaud.map(s => {
+    const absensiBulanIni = attendance.filter(a => {
+      if (a.studentId !== s.id) return false;
+      const tgl = new Date(a.date);
+      return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
+    });
+    const totalHariAbsen = attendance.filter(a => {
+      if (a.studentId !== s.id) return false;
+      const tgl = new Date(a.date);
+      return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
+    }).length;
+    return totalHariAbsen > 0 ? absensiBulanIni.length / totalHariAbsen : 0;
+  });
+  const attendanceProgressAllActive = attendancePercentsAll.length > 0 ? attendancePercentsAll.reduce((a, b) => a + b, 0) / attendancePercentsAll.length : 0;
+
+  // Progress rata-rata kehadiran untuk level terpilih (kecuali Pra PAUD)
+  const studentsFilteredNoPraPaud = studentsFiltered.filter(s => s.level !== 'Pra PAUD');
+  const attendancePercents = studentsFilteredNoPraPaud.map(s => {
     const absensiBulanIni = attendance.filter(a => {
       if (a.studentId !== s.id) return false;
       const tgl = new Date(a.date);
@@ -77,31 +118,44 @@ export function TPQDashboardPage({
     return totalHariAbsen > 0 ? absensiBulanIni.length / totalHariAbsen : 0;
   });
   const attendanceProgress = attendancePercents.length > 0 ? attendancePercents.reduce((a, b) => a + b, 0) / attendancePercents.length : 0;
-  // Memorization progress: placeholder (0)
+  // Memorization progress: placeholder (0), exclude Pra PAUD
   const memorizationProgress = 0;
 
-  // Absensi untuk level terpilih
+  // Absensi untuk level terpilih dan bulan terpilih
   const attendanceForLevel = attendance.filter(a => {
     const student = students.find(s => s.id === a.studentId);
-    return student && student.tpqGroup === tpqGroup && student.level === selectedLevel;
+    if (!student || student.tpqGroup !== tpqGroup || student.level !== selectedLevel) return false;
+    const tgl = new Date(a.date);
+    return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
   });
 
   // CRUD handlers (local state)
   function handleFormChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
   }
-  function handleAddAttendance() {
-    if (!form.studentId || !form.date || !form.status) return;
-    setAttendance(prev => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        studentId: form.studentId,
-        date: form.date,
-        status: form.status,
-      },
-    ]);
-    setForm({ studentId: '', date: '', status: '' });
+  async function handleAddAttendance() {
+    if (!form.studentId || !form.date || !form.status || !form.kegiatan) return;
+    try {
+      const res = await fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: form.studentId,
+          date: form.date,
+          status: form.status,
+          activityType: form.kegiatan,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.attendance) {
+        setAttendance(prev => [...prev, data.attendance]);
+        setForm({ studentId: '', date: '', status: '', kegiatan: '' });
+      } else {
+        alert('Gagal menambah absensi: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err) {
+      alert('Gagal menambah absensi: ' + err);
+    }
   }
   function handleDeleteAttendance(id: string) {
     if (!confirm('Yakin ingin menghapus absensi ini?')) return;
@@ -166,15 +220,17 @@ export function TPQDashboardPage({
             </div>
           </CardContent>
         </Card>
-        {/* Generus Aktif */}
+        {/* Generus Aktif (tidak termasuk Pra PAUD) */}
         <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
           <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-100 opacity-60" />
           <CardContent className="relative p-8 pt-10">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600 mb-3">Generus Aktif</p>
-                <p className="text-3xl font-bold text-green-700 mb-2">{totalSantri}</p>
-                <p className="text-xs text-gray-500 mb-4">Mengaji rutin</p>
+                <p className="text-3xl font-bold text-green-700 mb-2">{totalSantriAktif}</p>
+                {tpqGroup.toLowerCase() !== 'desa' && (
+                  <p className="text-xs text-gray-500 mb-4">Mengaji rutin (tanpa Pra PAUD)</p>
+                )}
               </div>
               <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg">
                 <UserCheck className="h-6 w-6 text-white" />
@@ -182,18 +238,20 @@ export function TPQDashboardPage({
             </div>
           </CardContent>
         </Card>
-        {/* Progress Kehadiran Bulan Ini */}
+        {/* Progress Kehadiran Bulan Ini (semua generus aktif, tanpa Pra PAUD) */}
         <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-100 opacity-60" />
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-purple-100 opacity-60" />
           <CardContent className="relative p-8 pt-10">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 mb-3">Progress Rata-Rata Kehadiran Bulan Ini</p>
-                <p className="text-3xl font-bold text-green-700 mb-2">{Math.round(attendanceProgress * 100)}%</p>
-                <p className="text-xs text-gray-500 mb-4">Kehadiran bulan ini</p>
+                <p className="text-sm font-medium text-gray-600 mb-3">Kehadiran Generus {tpqGroup}</p>
+                <p className="text-3xl font-bold text-purple-700 mb-2">{Math.round(attendanceProgressAllActive * 100)}%</p>
+                {tpqGroup.toLowerCase() !== 'desa' && (
+                  <p className="text-xs text-gray-500 mb-4">Kehadiran bulan ini (tanpa Pra PAUD)</p>
+                )}
               </div>
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg">
-                <UserCheck className="h-6 w-6 text-white" />
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg">
+                <TrendingUp className="h-6 w-6 text-white" />
               </div>
             </div>
           </CardContent>
@@ -277,36 +335,62 @@ export function TPQDashboardPage({
                   <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">No</th>
                   <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Nama</th>
                   <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Wali</th>
-                  <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Tanggal Lahir</th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Umur</th>
                   <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Gender</th>
                   <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Sekolah</th>
-                  <th className="px-4 py-2 text-left text-xs font-bold text-green-700 uppercase">Absensi {new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' })}</th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-green-700 uppercase">KBM {new Date().toLocaleString('id-ID', { month: 'long' })}</th>
+                  <th className="px-4 py-2 text-left text-xs font-bold text-purple-700 uppercase">KHQ {new Date().toLocaleString('id-ID', { month: 'long' })}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-blue-100">
                 {studentsFiltered.map((s, idx) => {
-                  // Hitung persentase kehadiran bulan ini untuk setiap generus
-                  const absensiBulanIni = attendance.filter(a => {
+                  // KBM
+                  const absensiKBM = attendance.filter(a => {
                     if (a.studentId !== s.id) return false;
+                    if (!('activityType' in a) || a.activityType !== 'KBM') return false;
                     const tgl = new Date(a.date);
                     return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
                   });
-                  const totalHariAbsen = attendance.filter(a => {
+                  const totalKBM = attendance.filter(a => {
                     if (a.studentId !== s.id) return false;
+                    if (!('activityType' in a) || a.activityType !== 'KBM') return false;
                     const tgl = new Date(a.date);
                     return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
                   }).length;
-                  // Persentase hadir = hadir/total absen bulan ini
-                  const persenHadir = totalHariAbsen > 0 ? Math.round((absensiBulanIni.length / totalHariAbsen) * 100) : 0;
+                  const persenKBM = totalKBM > 0 ? Math.round((absensiKBM.length / totalKBM) * 100) : 0;
+
+                  // KHQ
+                  const absensiKHQ = attendance.filter(a => {
+                    if (a.studentId !== s.id) return false;
+                    if (!('activityType' in a) || a.activityType !== 'KHQ') return false;
+                    const tgl = new Date(a.date);
+                    return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
+                  });
+                  const totalKHQ = attendance.filter(a => {
+                    if (a.studentId !== s.id) return false;
+                    if (!('activityType' in a) || a.activityType !== 'KHQ') return false;
+                    const tgl = new Date(a.date);
+                    return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
+                  }).length;
+                  const persenKHQ = totalKHQ > 0 ? Math.round((absensiKHQ.length / totalKHQ) * 100) : 0;
+
                   return (
                     <tr key={s.id} className="hover:bg-blue-50">
                       <td className="px-4 py-2 text-sm text-blue-900 font-semibold">{idx + 1}</td>
                       <td className="px-4 py-2 text-sm text-blue-900">{s.name}</td>
                       <td className="px-4 py-2 text-sm text-blue-900">{s.parentName}</td>
-                      <td className="px-4 py-2 text-sm text-blue-900">{s.dateOfBirth}</td>
+                      <td className="px-4 py-2 text-sm text-blue-900">{(() => {
+                        const dob = new Date(s.dateOfBirth);
+                        const now = new Date();
+                        let age = now.getFullYear() - dob.getFullYear();
+                        const m = now.getMonth() - dob.getMonth();
+                        if (m < 0 || (m === 0 && now.getDate() < dob.getDate())) age--;
+                        return age;
+                      })()}</td>
                       <td className="px-4 py-2 text-sm text-blue-900">{s.gender}</td>
                       <td className="px-4 py-2 text-sm text-blue-900">{s.schoolLevel}</td>
-                      <td className="px-4 py-2 text-sm text-green-700 font-bold">{persenHadir}%</td>
+                      <td className="px-4 py-2 text-sm text-green-700 font-bold">{persenKBM}%</td>
+                      <td className="px-4 py-2 text-sm text-purple-700 font-bold">{persenKHQ}%</td>
                     </tr>
                   );
                 })}
@@ -334,6 +418,20 @@ export function TPQDashboardPage({
                 handleAddAttendance();
               }}
             >
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-blue-700">Kegiatan</label>
+                <select
+                  name="kegiatan"
+                  value={form.kegiatan || ''}
+                  onChange={e => setForm(f => ({ ...f, kegiatan: e.target.value }))}
+                  className="w-full px-3 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 bg-white shadow-sm text-base font-normal text-blue-900"
+                  required
+                >
+                  <option value="" disabled className="text-blue-700 italic bg-blue-50">Pilih kegiatan</option>
+                  <option value="KBM">KBM</option>
+                  <option value="KHQ">KHQ</option>
+                </select>
+              </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-blue-700">Pilih Generus</label>
                 <select
@@ -391,6 +489,21 @@ export function TPQDashboardPage({
             <CardTitle className="text-blue-800 font-bold text-base">Daftar Absensi {selectedLevel}</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Dropdown bulan */}
+            <div className="mb-4 flex items-center gap-2">
+              <label className="text-xs font-semibold text-blue-700">Bulan</label>
+              <select
+                value={selectedMonth}
+                onChange={e => setSelectedMonth(e.target.value)}
+                className="px-2 py-1 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-200 text-sm"
+                style={{ color: '#1d4ed8', backgroundColor: '#eff6ff' }}
+              >
+                <option value="" disabled className="text-blue-700 italic bg-blue-50">Pilih bulan</option>
+                {monthOptions.map(val => (
+                  <option key={val} value={val} className="text-blue-700 italic bg-blue-50">{getMonthLabel(val)}</option>
+                ))}
+              </select>
+            </div>
             <div className="overflow-x-auto bg-white/90 border border-blue-200 rounded-lg shadow p-2">
               <table className="min-w-full divide-y divide-blue-200">
                 <thead className="bg-blue-100">
@@ -405,7 +518,7 @@ export function TPQDashboardPage({
                 <tbody className="bg-white divide-y divide-blue-100">
                   {attendanceForLevel.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center text-gray-400 py-8">Belum ada data absensi untuk level ini.</td>
+                      <td colSpan={5} className="text-center text-gray-400 py-8">Belum ada data absensi untuk bulan ini.</td>
                     </tr>
                   )}
                   {attendanceForLevel.map((a, idx) => {

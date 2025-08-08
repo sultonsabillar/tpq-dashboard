@@ -59,6 +59,7 @@ async function main() {
           studentId: student.id,
           date: new Date(`2025-08-0${i}`),
           status: i % 2 === 0 ? 'Hadir' : 'Izin',
+          activityType: i % 2 === 0 ? 'KBM' : 'KHQ',
         },
       });
     }

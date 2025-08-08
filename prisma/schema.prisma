@@ -21,13 +21,15 @@ model Student {
   level        String
   isActive     Boolean @default(true)
   attendances  Attendance[]
+  createdAt    DateTime @default(now())
 }
 
 model Attendance {
-  id         String   @id @default(uuid())
-  student    Student  @relation(fields: [studentId], references: [id])
-  studentId  String
-  date       DateTime
-  status     String
-  createdAt  DateTime @default(now())
+  id           String   @id @default(uuid())
+  student      Student  @relation(fields: [studentId], references: [id])
+  studentId    String
+  date         DateTime
+  status       String
+  activityType String   // KBM atau KHQ
+  createdAt    DateTime @default(now())
 }

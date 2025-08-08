@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck, BookOpen, TrendingUp } from 'lucide-react';
+import { getLevelBadgeClass } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
 interface DashboardStats {
@@ -23,22 +24,32 @@ export default function Dashboard() {
     attendanceRate: 0,
   });
 
+  const [levelStats, setLevelStats] = useState<{ level: string; count: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Fetch real data from API
-    // For now, using mock data
-    setTimeout(() => {
-      setStats({
-        totalStudents: 120,
-        activeStudents: 115,
-        totalTeachers: 8,
-        totalClasses: 12,
-        todayAttendance: 102,
-        attendanceRate: 85,
-      });
+    async function fetchStats() {
+      // Fetch dashboard stats from API (real DB)
+      try {
+        const res = await fetch('/api/dashboard/stats');
+        const data = await res.json();
+        setStats(data);
+      } catch (e) {
+        console.error('Error fetching dashboard stats:', e);
+      }
+      // Fetch level stats
+      try {
+        const res = await fetch('/api/students/levels');
+        if (res.ok) {
+          const data = await res.json();
+          setLevelStats(data);
+        }
+      } catch (e) {
+        console.error('Error fetching level stats:', e);
+      }
       setLoading(false);
-    }, 1000);
+    }
+    fetchStats();
   }, []);
 
   const statCards = [
@@ -63,19 +74,19 @@ export default function Dashboard() {
       changeType: 'increase',
     },
     {
-      title: 'Total Ustadz',
-      value: stats.totalTeachers,
-      subtitle: 'Pengajar aktif',
-      icon: BookOpen,
+      title: 'Generus Desa Bulan Ini',
+      value: `${stats.attendanceRate}%`,
+      subtitle: 'Rata-rata kehadiran Generus Desa',
+      icon: TrendingUp,
       gradient: 'from-purple-500 to-purple-600',
       bgGradient: 'from-purple-50 to-purple-100',
-      change: '0',
-      changeType: 'stable',
+      change: '+3%',
+      changeType: 'increase',
     },
     {
       title: 'Progress Hafalan',
-      value: `${stats.attendanceRate}%`,
-      subtitle: 'Rata-rata santri',
+      //value: `${stats.attendanceRate}%`,
+      subtitle: 'Rata-rata Hapalan Generus Desa',
       icon: TrendingUp,
       gradient: 'from-orange-500 to-amber-600',
       bgGradient: 'from-orange-50 to-amber-100',
@@ -186,40 +197,30 @@ export default function Dashboard() {
       </div>
 
       {/* Generus Statistics */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border border-gray-200 hover:shadow-md transition-shadow">
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mx-auto mb-3">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-              </svg>
-            </div>
-            <p className="text-2xl font-bold text-blue-600 mb-1">{stats.activeStudents}</p>
-            <p className="text-sm text-gray-600 font-medium">Total Generus Aktif</p>
-          </CardContent>
-        </Card>
-        <Card className="border border-gray-200 hover:shadow-md transition-shadow">
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mx-auto mb-3">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-              </svg>
-            </div>
-            <p className="text-2xl font-bold text-green-600 mb-1">12</p>
-            <p className="text-sm text-gray-600 font-medium">Generus Paket D</p>
-          </CardContent>
-        </Card>
-        <Card className="border border-gray-200 hover:shadow-md transition-shadow">
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mx-auto mb-3">
-              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1a3 3 0 000 6h1m1-6a3 3 0 013 3v2a3 3 0 01-3 3M9 10V9a3 3 0 113 0v1M9 10V9a3 3 0 113 0v1" />
-              </svg>
-            </div>
-            <p className="text-2xl font-bold text-purple-600 mb-1">8</p>
-            <p className="text-sm text-gray-600 font-medium">Generus Pra PAUD & PAUD</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {[
+          { label: 'Pra PAUD', icon: Users },
+          { label: 'PAUD', icon: Users },
+          { label: 'Paket A', icon: Users },
+          { label: 'Paket B', icon: Users },
+          { label: 'Paket C', icon: Users },
+          { label: 'Paket D', icon: Users },
+        ].map((item) => {
+          const stat = levelStats.find((l) => l.level === item.label);
+          const Icon = item.icon;
+          const badgeClass = getLevelBadgeClass(item.label);
+          return (
+            <Card key={item.label} className="border border-gray-200 hover:shadow-md transition-shadow">
+              <CardContent className="p-4 text-center">
+                <div className={`flex items-center justify-center w-12 h-12 rounded-full mx-auto mb-3 ${badgeClass}`}>
+                  <Icon className="h-6 w-6" />
+                </div>
+                <p className={`text-2xl font-bold mb-1 ${badgeClass}`}>{stat ? stat.count : 0}</p>
+                <p className="text-sm text-gray-600 font-medium">Generus {item.label}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Recent Activity & Quick Actions */}

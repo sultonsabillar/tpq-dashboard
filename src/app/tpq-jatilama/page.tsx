@@ -1,7 +1,7 @@
 
 import { getTPQHeaderColors } from '../../lib/utils';
 import { TPQDashboardPage, Student, Attendance } from '../../components/tpq/TPQDashboardPage';
-import { prisma } from '../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 const TPQ_GROUP = 'Jatilama';
 const LEVELS = [
