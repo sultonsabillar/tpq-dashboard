@@ -48,25 +48,51 @@ export async function GET() {
       changeTypeActiveStudents = changeActiveStudents > 0 ? 'increase' : changeActiveStudents < 0 ? 'decrease' : 'stable';
     }
 
-    // Progress kehadiran bulan ini (exclude Pra PAUD)
-    // Ambil semua studentId yang levelnya BUKAN Pra PAUD
-    const nonPraPaudStudents = await prisma.student.findMany({
+    // Progress kehadiran KBM bulan ini (exclude Pra PAUD), peluang berdasarkan jumlah pertemuan KBM unik per TPQ
+    const tpqGroups = await prisma.student.findMany({
+      where: { NOT: { level: 'Pra PAUD' } },
+      select: { tpqGroup: true },
+      distinct: ['tpqGroup'],
+    });
+    // Rata-rata persentase kehadiran KBM per santri aktif (selain Pra PAUD)
+    const activeStudentList = await prisma.student.findMany({
       where: { NOT: { level: 'Pra PAUD' } },
       select: { id: true },
     });
-    const nonPraPaudIds = nonPraPaudStudents.map(s => s.id);
-    const attendanceMonth = await prisma.attendance.count({
-      where: {
-        studentId: { in: nonPraPaudIds },
-        date: {
-          gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-          lte: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
+    let percentSum = 0;
+    let count = 0;
+    for (const student of activeStudentList) {
+      // Ambil semua tanggal unik pertemuan KBM bulan ini untuk santri ini
+      const uniqueKBMDates = await prisma.attendance.findMany({
+        where: {
+          studentId: student.id,
+          date: {
+            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+            lte: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
+          },
+          activityType: 'KBM',
         },
-        status: 'Hadir',
-      },
-    });
-    const totalAttendancePossible = nonPraPaudIds.length * (new Date().getDate()); // asumsi 1x absen per hari
-    const attendanceRateMonth = totalAttendancePossible > 0 ? Math.round((attendanceMonth / totalAttendancePossible) * 100) : 0;
+        select: { date: true },
+        distinct: ['date'],
+      });
+      const pertemuanCount = uniqueKBMDates.length;
+      if (pertemuanCount === 0) continue;
+      // Hitung jumlah hadir KBM bulan ini untuk santri ini
+      const hadirCount = await prisma.attendance.count({
+        where: {
+          studentId: student.id,
+          date: {
+            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+            lte: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
+          },
+          activityType: 'KBM',
+          status: 'Hadir',
+        },
+      });
+      percentSum += hadirCount / pertemuanCount;
+      count++;
+    }
+    const attendanceRateMonth = count > 0 ? Math.round((percentSum / count) * 100) : 0;
 
     // Hitung jumlah grup unik dari field tpqGroup di Student
     const groupResult = await prisma.student.findMany({

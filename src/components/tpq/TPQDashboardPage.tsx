@@ -20,6 +20,7 @@ export interface Attendance {
   studentId: string;
   date: string;
   status: string;
+  activityType?: string;
 }
 
 interface TPQDashboardPageProps {
@@ -69,8 +70,8 @@ export function TPQDashboardPage({
   // State bulan terpilih
   const now = new Date();
   const currentMonthKey = `${now.getFullYear()}-${now.getMonth()}`;
-  // Jika ada data, default ke bulan terbaru, jika tidak, kosong
-  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  // Jika ada data, default ke bulan terbaru, jika tidak, default ke bulan saat ini
+  const [selectedMonth, setSelectedMonth] = useState<string>(monthOptions.length > 0 ? monthOptions[0] : currentMonthKey);
 
   // Filter students untuk TPQ & level terpilih
   const studentsFiltered = students.filter(
@@ -90,11 +91,13 @@ export function TPQDashboardPage({
   const attendancePercentsAll = studentsAllActiveNoPraPaud.map(s => {
     const absensiBulanIni = attendance.filter(a => {
       if (a.studentId !== s.id) return false;
+      if (!('activityType' in a) || a.activityType !== 'KBM') return false;
       const tgl = new Date(a.date);
       return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
     });
     const totalHariAbsen = attendance.filter(a => {
       if (a.studentId !== s.id) return false;
+      if (!('activityType' in a) || a.activityType !== 'KBM') return false;
       const tgl = new Date(a.date);
       return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
     }).length;
@@ -107,17 +110,37 @@ export function TPQDashboardPage({
   const attendancePercents = studentsFilteredNoPraPaud.map(s => {
     const absensiBulanIni = attendance.filter(a => {
       if (a.studentId !== s.id) return false;
+      if (!('activityType' in a) || a.activityType !== 'KBM') return false;
       const tgl = new Date(a.date);
       return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
     });
     const totalHariAbsen = attendance.filter(a => {
       if (a.studentId !== s.id) return false;
+      if (!('activityType' in a) || a.activityType !== 'KBM') return false;
       const tgl = new Date(a.date);
       return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
     }).length;
     return totalHariAbsen > 0 ? absensiBulanIni.length / totalHariAbsen : 0;
   });
   const attendanceProgress = attendancePercents.length > 0 ? attendancePercents.reduce((a, b) => a + b, 0) / attendancePercents.length : 0;
+
+  // Progress kehadiran KHQ untuk level terpilih
+  const attendancePercentsKHQ = studentsFilteredNoPraPaud.map(s => {
+    const absensiBulanIni = attendance.filter(a => {
+      if (a.studentId !== s.id) return false;
+      if (!('activityType' in a) || a.activityType !== 'KHQ') return false;
+      const tgl = new Date(a.date);
+      return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
+    });
+    const totalHariAbsen = attendance.filter(a => {
+      if (a.studentId !== s.id) return false;
+      if (!('activityType' in a) || a.activityType !== 'KHQ') return false;
+      const tgl = new Date(a.date);
+      return tgl.getMonth() === currentMonth && tgl.getFullYear() === currentYear;
+    }).length;
+    return totalHariAbsen > 0 ? absensiBulanIni.length / totalHariAbsen : 0;
+  });
+  const attendanceProgressKHQ = attendancePercentsKHQ.length > 0 ? attendancePercentsKHQ.reduce((a, b) => a + b, 0) / attendancePercentsKHQ.length : 0;
   // Memorization progress: placeholder (0), exclude Pra PAUD
   const memorizationProgress = 0;
 
@@ -244,7 +267,7 @@ export function TPQDashboardPage({
           <CardContent className="relative p-8 pt-10">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 mb-3">Kehadiran Generus {tpqGroup}</p>
+                <p className="text-sm font-medium text-gray-600 mb-3">Kehadiran KBM Generus {tpqGroup}</p>
                 <p className="text-3xl font-bold text-purple-700 mb-2">{Math.round(attendanceProgressAllActive * 100)}%</p>
                 {tpqGroup.toLowerCase() !== 'desa' && (
                   <p className="text-xs text-gray-500 mb-4">Kehadiran bulan ini (tanpa Pra PAUD)</p>
@@ -306,20 +329,28 @@ export function TPQDashboardPage({
       </div>
 
       {/* Progress summary per kelas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-4 flex flex-col items-center">
-            <span className="text-xs text-gray-500 mb-1">Kehadiran {selectedLevel}</span>
-            <span className="text-2xl font-bold text-green-700">{Math.round(attendanceProgress * 100)}%</span>
-          </CardContent>
-        </Card>
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-4 flex flex-col items-center">
-            <span className="text-xs text-gray-500 mb-1">Hapalan {selectedLevel}</span>
-            <span className="text-2xl font-bold text-orange-700">{Math.round(memorizationProgress * 100)}%</span>
-          </CardContent>
-        </Card>
-      </div>
+      {selectedLevel !== 'Pra PAUD' && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+          <Card className="border-0 shadow-md">
+            <CardContent className="p-4 flex flex-col items-center">
+              <span className="text-xs text-gray-500 mb-1">Kehadiran KBM {selectedLevel}</span>
+              <span className="text-2xl font-bold text-green-700">{Math.round(attendanceProgress * 100)}%</span>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-md">
+            <CardContent className="p-4 flex flex-col items-center">
+              <span className="text-xs text-gray-500 mb-1">Kehadiran KHQ {selectedLevel}</span>
+              <span className="text-2xl font-bold text-purple-700">{Math.round(attendanceProgressKHQ * 100)}%</span>
+            </CardContent>
+          </Card>
+          <Card className="border-0 shadow-md">
+            <CardContent className="p-4 flex flex-col items-center">
+              <span className="text-xs text-gray-500 mb-1">Hapalan {selectedLevel}</span>
+              <span className="text-2xl font-bold text-orange-700">{Math.round(memorizationProgress * 100)}%</span>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
 
       {/* Tabel Data Generus per kelas, dengan persentase kehadiran bulan ini */}
@@ -389,8 +420,18 @@ export function TPQDashboardPage({
                       })()}</td>
                       <td className="px-4 py-2 text-sm text-blue-900">{s.gender}</td>
                       <td className="px-4 py-2 text-sm text-blue-900">{s.schoolLevel}</td>
-                      <td className="px-4 py-2 text-sm text-green-700 font-bold">{persenKBM}%</td>
-                      <td className="px-4 py-2 text-sm text-purple-700 font-bold">{persenKHQ}%</td>
+                      <td className="px-4 py-2 text-sm text-green-700 font-bold">
+                        {persenKBM}%
+                        <div className="text-xs text-gray-500 font-normal">
+                          ({absensiKBM.length} hadir / {totalKBM} pertemuan)
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 text-sm text-purple-700 font-bold">
+                        {persenKHQ}%
+                        <div className="text-xs text-gray-500 font-normal">
+                          ({absensiKHQ.length} hadir / {totalKHQ} pertemuan)
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -498,7 +539,6 @@ export function TPQDashboardPage({
                 className="px-2 py-1 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-200 text-sm"
                 style={{ color: '#1d4ed8', backgroundColor: '#eff6ff' }}
               >
-                <option value="" disabled className="text-blue-700 italic bg-blue-50">Pilih bulan</option>
                 {monthOptions.map(val => (
                   <option key={val} value={val} className="text-blue-700 italic bg-blue-50">{getMonthLabel(val)}</option>
                 ))}
@@ -511,6 +551,7 @@ export function TPQDashboardPage({
                     <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">No</th>
                     <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Nama</th>
                     <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Tanggal</th>
+                    <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Kegiatan</th>
                     <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Status</th>
                     <th className="px-4 py-2 text-left text-xs font-bold text-blue-700 uppercase">Aksi</th>
                   </tr>
@@ -528,6 +569,7 @@ export function TPQDashboardPage({
                         <td className="px-4 py-2 text-sm text-blue-900 font-semibold">{idx + 1}</td>
                         <td className="px-4 py-2 text-sm text-blue-900">{s?.name ?? '-'}</td>
                         <td className="px-4 py-2 text-sm text-blue-900">{a.date}</td>
+                        <td className="px-4 py-2 text-sm text-blue-900">{a.activityType ?? '-'}</td>
                         <td className="px-4 py-2 text-sm text-blue-900">{a.status}</td>
                         <td className="px-4 py-2 text-sm">
                           <button

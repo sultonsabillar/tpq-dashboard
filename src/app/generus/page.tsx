@@ -1,6 +1,6 @@
 
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, Filter } from 'lucide-react';
@@ -16,15 +16,14 @@ import { StudentForm } from '@/components/students/student-form';
 
 
 export default function GenerusPage() {
-  const levels = ['all', 'Pra PAUD', 'PAUD', 'Paket A', 'Paket B', 'Paket C', 'Paket D'];
-  const [students, setStudents] = useState<Student[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLevel, setSelectedLevel] = useState('all');
-  useEffect(() => {
+  // Helper untuk fetch ulang data students
+  const fetchStudents = useCallback(() => {
     fetch('/api/students')
       .then(res => res.json())
       .then(data => {
-        setStudents(data.map((s: any) => ({
+        // Urutkan dari yang terbaru (createdAt descending)
+        const sorted = data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setStudents(sorted.map((s: any) => ({
           id: s.id,
           name: s.name,
           parentName: s.parentName,
@@ -38,6 +37,19 @@ export default function GenerusPage() {
         })));
       });
   }, []);
+  const levels = ['all', 'Pra PAUD', 'PAUD', 'Paket A', 'Paket B', 'Paket C', 'Paket D'];
+  const [students, setStudents] = useState<Student[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLevel, setSelectedLevel] = useState('all');
+  useEffect(() => {
+    fetchStudents();
+    // Pull-to-refresh: reload data saat visibility berubah (misal, user swipe down di mobile)
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') fetchStudents();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [fetchStudents]);
 
   const addStudent = async (student: Student) => {
     // Hanya kirim field yang valid ke backend
@@ -57,12 +69,7 @@ export default function GenerusPage() {
       return;
     }
     const newStudent = await res.json();
-    setStudents(prev => [...prev, {
-      ...newStudent,
-      dateOfBirth: newStudent.dateOfBirth?.split('T')[0],
-      age: newStudent.dateOfBirth ? (new Date().getFullYear() - new Date(newStudent.dateOfBirth).getFullYear()) : 0,
-      isActive: newStudent.isActive !== undefined ? newStudent.isActive : true,
-    }]);
+    fetchStudents(); // langsung fetch ulang agar urutan konsisten
   };
   const updateStudent = async (student: Student) => {
     // Hanya kirim field yang valid ke backend
@@ -107,15 +114,17 @@ export default function GenerusPage() {
           <h1 className="text-3xl font-bold text-gray-900">Manajemen Generus</h1>
           <p className="text-gray-600">Kelola data generus TPQ</p>
         </div>
-        <StudentForm
-          onSave={addStudent}
-          trigger={
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Tambah Generus
-            </Button>
-          }
-        />
+        <div className="flex gap-2 items-center">
+          <StudentForm
+            onSave={addStudent}
+            trigger={
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Tambah Generus
+              </Button>
+            }
+          />
+        </div>
       </div>
 
       {/* Filters */}
