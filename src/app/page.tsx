@@ -84,7 +84,7 @@ export default function Dashboard() {
       changeType: 'increase',
     },
     {
-      title: 'Generus Desa Bulan Ini',
+      title: `Generus Desa Bulan ${getMonthLabel(selectedMonth)}`,
       value: `${stats.attendanceRate}%`,
       subtitle: 'Rata-rata kehadiran Generus Desa',
       icon: TrendingUp,

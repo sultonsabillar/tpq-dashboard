@@ -262,7 +262,9 @@ export function TPQDashboardPage({
                 <p className="text-sm font-medium text-gray-600 mb-3">Kehadiran KBM Generus {tpqGroup}</p>
                 <p className="text-3xl font-bold text-purple-700 mb-2">{Math.round(attendanceProgressAllActive * 100)}%</p>
                 {tpqGroup.toLowerCase() !== 'desa' && (
-                  <p className="text-xs text-gray-500 mb-4">Kehadiran bulan ini (tanpa Pra PAUD)</p>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Kehadiran bulan {getMonthLabel(selectedMonth)} (tanpa Pra PAUD)
+                  </p>
                 )}
               </div>
               <div className="p-3 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg">
