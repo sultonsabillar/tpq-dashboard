@@ -11,7 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 import { Student } from '@/types';
 import { getInitials, getLevelBadgeClass, getTPQBadgeClass } from '@/lib/utils';
-import { StudentForm } from '@/components/students/student-form';
+import { AddStudentForm } from '@/components/students/add-student-form';
+import { EditStudentForm } from '@/components/students/edit-student-form';
 // import { StudentForm } from '@/components/students/student-form';
 
 
@@ -115,7 +116,7 @@ export default function GenerusPage() {
           <p className="text-gray-600">Kelola data generus TPQ</p>
         </div>
         <div className="flex gap-2 items-center">
-          <StudentForm
+          <AddStudentForm
             onSave={addStudent}
             trigger={
               <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm">
@@ -269,7 +270,7 @@ export default function GenerusPage() {
                     {/* Action Buttons */}
                     <div className="flex items-center space-x-3 ml-6 flex-shrink-0">
                       {student && (
-                        <StudentForm
+                        <EditStudentForm
                           student={student}
                           onSave={updateStudent}
                           trigger={

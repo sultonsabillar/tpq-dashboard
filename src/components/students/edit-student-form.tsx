@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,109 +10,68 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { User, Calendar, Users, School, BookOpen, MapPin } from 'lucide-react';
+import { User, Users, Calendar, MapPin, BookOpen, School } from 'lucide-react';
 import { Student } from '@/types';
-import { generateId, LEVELS, GENDER_OPTIONS, TPQ_GROUPS, SCHOOL_LEVELS, generateNomorInduk, calculateAge, getLevelBadgeClass, getTPQBadgeClass } from '@/lib/utils';
+import { generateNomorInduk, calculateAge, LEVELS, GENDER_OPTIONS, TPQ_GROUPS, SCHOOL_LEVELS, getLevelBadgeClass, getTPQBadgeClass } from '@/lib/utils';
 
-interface StudentFormProps {
-  student?: Student;
+interface EditStudentFormProps {
+  student: Student;
   onSave: (student: Student) => void;
   trigger: React.ReactNode;
 }
 
-export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
+export function EditStudentForm({ student, onSave, trigger }: EditStudentFormProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<Student>>({
-    name: student?.name || '',
-    parentName: student?.parentName || '',
-    dateOfBirth: student?.dateOfBirth || '',
-    gender: student?.gender || undefined,
-    tpqGroup: student?.tpqGroup || undefined,
-    schoolLevel: student?.schoolLevel || '',
-    level: student?.level || undefined,
+    name: student.name,
+    parentName: student.parentName,
+    dateOfBirth: student.dateOfBirth,
+    gender: student.gender,
+    tpqGroup: student.tpqGroup,
+    schoolLevel: student.schoolLevel,
+    level: student.level,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const nomorInduk = generateNomorInduk(formData.tpqGroup!, formData.dateOfBirth!);
       const age = calculateAge(formData.dateOfBirth!);
-      
       const studentData: Student = {
-        id: student?.id || generateId('STD'),
+        ...student,
+        ...formData as Omit<Student, 'id' | 'nomorInduk' | 'age'>,
         nomorInduk,
         age,
-        ...formData as Omit<Student, 'id' | 'nomorInduk' | 'age'>,
-        isActive: true,
       };
-
-      // Simulate API call for frontend development
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
       onSave(studentData);
       setOpen(false);
-      
-      // Reset form if adding new student
-      if (!student) {
-        setFormData({
-          name: '',
-          parentName: '',
-          dateOfBirth: '',
-          gender: undefined,
-          tpqGroup: undefined,
-          schoolLevel: '',
-          level: undefined,
-        });
-      }
     } catch (error) {
-      console.error('Error saving student:', error);
-      alert('Gagal menyimpan data siswa. Silakan coba lagi.');
+      alert('Gagal menyimpan perubahan. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleChange = (field: keyof Student, value: string) => {
-    // Untuk field name dan parentName, selalu uppercase
-    let newValue = value;
-    if (field === 'name' || field === 'parentName') {
-      newValue = value.toUpperCase();
-    }
-    setFormData(prev => ({ ...prev, [field]: newValue }));
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-white">
-        <DialogHeader className="space-y-3 pb-4 border-b border-gray-100">
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+  <DialogContent className="sm:max-w-[600px] max-h-[90vh] bg-white pt-2">
+        <DialogHeader className="space-y-2 pb-3 border-b border-gray-100">
           <DialogTitle className="text-xl font-bold flex items-center gap-3">
-            {student ? (
-              <>
-                <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
-                  <User className="h-5 w-5 text-blue-600" />
-                </div>
-                <span className="text-gray-900">Edit Generus</span>
-              </>
-            ) : (
-              <>
-                <div className="p-2 bg-green-50 rounded-lg border border-green-100">
-                  <Users className="h-5 w-5 text-green-600" />
-                </div>
-                <span className="text-gray-900">Tambah Generus Baru</span>
-              </>
-            )}
+            <div className="p-2 bg-yellow-50 rounded-lg border border-yellow-100">
+              <Users className="h-5 w-5 text-yellow-600" />
+            </div>
+            <span className="text-gray-900">Edit Data Generus</span>
           </DialogTitle>
           <DialogDescription className="text-gray-500 text-sm leading-relaxed">
-            {student 
-              ? 'Ubah informasi generus di bawah ini dan pastikan data yang dimasukkan sudah benar.' 
-              : 'Isi formulir di bawah untuk menambahkan generus baru ke dalam sistem TPQ.'
-            }
+            Perbarui data generus di bawah ini lalu simpan perubahan.
           </DialogDescription>
           {formData.level && formData.tpqGroup && (
             <div className="flex items-center gap-2 pt-2">
@@ -127,8 +84,7 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
             </div>
           )}
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-6 py-4">
+  <form onSubmit={handleSubmit} className="space-y-6 py-3">
           {/* Section 1: Data Pribadi */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
@@ -137,7 +93,6 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
               </div>
               <h3 className="font-semibold text-gray-900">Data Pribadi</h3>
             </div>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-800 flex items-center gap-1">
@@ -146,14 +101,13 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
                 </label>
                 <Input
                   required
-                  value={formData.name}
-                  onChange={(e) => handleChange('name', e.target.value)}
+                  value={formData.name || ''}
+                  onChange={e => handleChange('name', e.target.value)}
                   placeholder="Masukkan nama lengkap"
                   className="border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
                   style={{ textTransform: 'uppercase' }}
                 />
               </div>
-              
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-800 flex items-center gap-1">
                   <Users className="h-3 w-3 text-blue-500" />
@@ -161,15 +115,14 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
                 </label>
                 <Input
                   required
-                  value={formData.parentName}
-                  onChange={(e) => handleChange('parentName', e.target.value)}
+                  value={formData.parentName || ''}
+                  onChange={e => handleChange('parentName', e.target.value)}
                   placeholder="Nama ayah/ibu/wali"
                   className="border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-sm text-gray-900 placeholder:text-gray-400"
                   style={{ textTransform: 'uppercase' }}
                 />
               </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-800 flex items-center gap-1">
@@ -179,18 +132,17 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
                 <Input
                   required
                   type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => handleChange('dateOfBirth', e.target.value)}
+                  value={formData.dateOfBirth || ''}
+                  onChange={e => handleChange('dateOfBirth', e.target.value)}
                   className="border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-sm text-gray-900"
                 />
               </div>
-              
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-800">Jenis Kelamin *</label>
                 <select
                   required
                   value={formData.gender || ''}
-                  onChange={(e) => handleChange('gender', e.target.value as 'Laki-laki' | 'Perempuan')}
+                  onChange={e => handleChange('gender', e.target.value as 'Laki-laki' | 'Perempuan')}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 bg-white shadow-sm text-gray-900"
                 >
                   <option value="" disabled>Pilih jenis kelamin</option>
@@ -203,7 +155,6 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
               </div>
             </div>
           </div>
-
           {/* Section 2: Data TPQ */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
@@ -212,14 +163,13 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
               </div>
               <h3 className="font-semibold text-gray-900">Data TPQ</h3>
             </div>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-800">Kelompok TPQ *</label>
                 <select
                   required
                   value={formData.tpqGroup || ''}
-                  onChange={(e) => handleChange('tpqGroup', e.target.value as typeof TPQ_GROUPS[number])}
+                  onChange={e => handleChange('tpqGroup', e.target.value as typeof TPQ_GROUPS[number])}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-500 bg-white shadow-sm text-gray-900"
                 >
                   <option value="" disabled>Pilih kelompok TPQ</option>
@@ -230,7 +180,6 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
                   ))}
                 </select>
               </div>
-              
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-800 flex items-center gap-1">
                   <BookOpen className="h-3 w-3 text-green-500" />
@@ -239,7 +188,7 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
                 <select
                   required
                   value={formData.level || ''}
-                  onChange={(e) => handleChange('level', e.target.value as typeof LEVELS[number])}
+                  onChange={e => handleChange('level', e.target.value as typeof LEVELS[number])}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-500 bg-white shadow-sm text-gray-900"
                 >
                   <option value="" disabled>Pilih level paket</option>
@@ -252,7 +201,6 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
               </div>
             </div>
           </div>
-
           {/* Section 3: Data Sekolah */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
@@ -261,7 +209,6 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
               </div>
               <h3 className="font-semibold text-gray-900">Data Sekolah</h3>
             </div>
-            
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-800">Kelas Sekolah *</label>
               <select
@@ -279,7 +226,6 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
               </select>
             </div>
           </div>
-
           <DialogFooter className="flex gap-3 pt-6 border-t border-gray-100">
             <Button
               type="button"
@@ -293,11 +239,7 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
             <Button 
               type="submit" 
               disabled={loading}
-              className={`px-6 py-2 text-white font-medium shadow-sm ${
-                student 
-                  ? 'bg-blue-600 hover:bg-blue-700' 
-                  : 'bg-green-600 hover:bg-green-700'
-              }`}
+              className="px-6 py-2 text-white font-medium shadow-sm bg-yellow-600 hover:bg-yellow-700"
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -305,7 +247,7 @@ export function StudentForm({ student, onSave, trigger }: StudentFormProps) {
                   Menyimpan...
                 </div>
               ) : (
-                student ? 'Simpan Perubahan' : 'Tambah Generus'
+                'Simpan Perubahan'
               )}
             </Button>
           </DialogFooter>
