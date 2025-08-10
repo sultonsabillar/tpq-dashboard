@@ -1,4 +1,5 @@
 import React from 'react';
+import { X, Calendar, Users, ClipboardEdit } from 'lucide-react';
 
 interface EditAttendanceModalProps {
   open: boolean;
@@ -13,13 +14,27 @@ interface EditAttendanceModalProps {
 export default function EditAttendanceModal({ open, onClose, form, students, onChange, onSubmit, setForm }: EditAttendanceModalProps) {
   if (!open) return null;
   return (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md relative">
-        <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700" onClick={onClose}>&times;</button>
-        <h2 className="text-lg font-bold mb-4 text-blue-800">Edit Absensi</h2>
-        <form className="flex flex-col gap-4" onSubmit={onSubmit}>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-blue-700">Kegiatan</label>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Overlay with blur and darken */}
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm transition-all" aria-hidden="true" />
+      {/* Dialog content */}
+      <div className="relative z-10 w-full max-w-md bg-white rounded-xl shadow-xl p-0 overflow-hidden animate-in">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-6 pt-6 pb-2 border-b border-gray-100">
+          <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
+            <ClipboardEdit className="h-5 w-5 text-blue-600" />
+          </div>
+          <h2 className="text-lg font-bold text-blue-900 flex-1">Edit Absensi</h2>
+          <button className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition" onClick={onClose} aria-label="Tutup">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <form className="flex flex-col gap-4 px-6 py-6" onSubmit={onSubmit}>
+          {/* Kegiatan */}
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-blue-700 flex items-center gap-1">
+              <ClipboardEdit className="h-3 w-3 text-blue-500" /> Kegiatan
+            </label>
             <select
               name="kegiatan"
               value={form.kegiatan || ''}
@@ -32,8 +47,11 @@ export default function EditAttendanceModal({ open, onClose, form, students, onC
               <option value="KHQ">KHQ</option>
             </select>
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-blue-700">Pilih Generus</label>
+          {/* Generus */}
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-blue-700 flex items-center gap-1">
+              <Users className="h-3 w-3 text-blue-500" /> Pilih Generus
+            </label>
             <select
               name="studentId"
               value={form.studentId}
@@ -47,8 +65,11 @@ export default function EditAttendanceModal({ open, onClose, form, students, onC
               ))}
             </select>
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-blue-700">Tanggal</label>
+          {/* Tanggal */}
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-blue-700 flex items-center gap-1">
+              <Calendar className="h-3 w-3 text-blue-500" /> Tanggal
+            </label>
             <input
               type="date"
               name="date"
@@ -59,8 +80,11 @@ export default function EditAttendanceModal({ open, onClose, form, students, onC
               placeholder="Pilih tanggal absensi"
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-blue-700">Status</label>
+          {/* Status */}
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-blue-700 flex items-center gap-1">
+              Status
+            </label>
             <select
               name="status"
               value={form.status}
@@ -75,16 +99,17 @@ export default function EditAttendanceModal({ open, onClose, form, students, onC
               <option value="Alpa">Alpa</option>
             </select>
           </div>
-          <div className="flex gap-2 mt-2">
+          {/* Footer */}
+          <div className="flex gap-2 pt-2 border-t border-gray-100 mt-2">
             <button
               type="submit"
-              className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow"
+              className="px-6 py-2 rounded bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow"
             >
               Simpan
             </button>
             <button
               type="button"
-              className="px-4 py-2 rounded bg-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-300 shadow"
+              className="px-6 py-2 rounded bg-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-300 shadow"
               onClick={onClose}
             >
               Batal
