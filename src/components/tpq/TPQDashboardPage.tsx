@@ -1,5 +1,6 @@
 "use client";
-import { useState } from 'react';
+import React, { useState } from 'react';
+import EditAttendanceModal from './EditAttendanceModal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck, TrendingUp } from 'lucide-react';
 
@@ -51,6 +52,51 @@ export function TPQDashboardPage({
   const [selectedLevel, setSelectedLevel] = useState<string>(levels[0]);
   const [form, setForm] = useState<{ studentId: string; date: string; status: string; kegiatan?: string }>({ studentId: '', date: '', status: '', kegiatan: '' });
   const [attendance, setAttendance] = useState<Attendance[]>(attendanceProp);
+  // State & handler edit absensi (sederhana, bisa dikembangkan modal/form)
+  const [editingAttendance, setEditingAttendance] = useState<Attendance | null>(null);
+  function handleEditAttendance(a: Attendance) {
+    setEditingAttendance(a);
+  }
+
+  // State untuk form edit
+  const [editForm, setEditForm] = useState<{ studentId: string; date: string; status: string; kegiatan?: string }>({ studentId: '', date: '', status: '', kegiatan: '' });
+  // Sync editForm saat editingAttendance berubah
+  React.useEffect(() => {
+    if (editingAttendance) {
+      setEditForm({
+        studentId: editingAttendance.studentId,
+        date: editingAttendance.date,
+        status: editingAttendance.status,
+        kegiatan: editingAttendance.activityType || '',
+      });
+    }
+  }, [editingAttendance]);
+
+  async function handleUpdateAttendance() {
+    if (!editingAttendance) return;
+    try {
+      const res = await fetch(`/api/attendance/${editingAttendance.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: editForm.studentId,
+          date: editForm.date,
+          status: editForm.status,
+          activityType: editForm.kegiatan,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.attendance) {
+        setAttendance(prev => prev.map(a => a.id === editingAttendance.id ? data.attendance : a));
+        setEditingAttendance(null);
+      } else {
+        alert('Gagal update absensi: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err) {
+      alert('Gagal update absensi: ' + err);
+    }
+  }
+  // ...existing code...
   // Dropdown bulan: selalu tampilkan 12 bulan dalam setahun (Januari-Desember tahun berjalan)
   const now = new Date();
   const currentYearNum = now.getFullYear();
@@ -191,6 +237,18 @@ export function TPQDashboardPage({
 
   return (
     <div className="space-y-6">
+      <EditAttendanceModal
+        open={!!editingAttendance}
+        onClose={() => setEditingAttendance(null)}
+        form={editForm}
+        setForm={setEditForm}
+        students={students}
+        onChange={e => setEditForm(f => ({ ...f, [e.target.name]: e.target.value }))}
+        onSubmit={e => {
+          e.preventDefault();
+          handleUpdateAttendance();
+        }}
+      />
       {/* Header */}
       <div className={`${colors.gradient} rounded-2xl p-6 border ${colors.border} mb-4`}>
         <div className="flex items-center justify-between">
@@ -578,7 +636,11 @@ export function TPQDashboardPage({
                         <td className="px-4 py-2 text-sm text-blue-900">{a.date}</td>
                         <td className="px-4 py-2 text-sm text-blue-900">{a.activityType ?? '-'}</td>
                         <td className="px-4 py-2 text-sm text-blue-900">{a.status}</td>
-                        <td className="px-4 py-2 text-sm">
+                        <td className="px-4 py-2 text-sm flex gap-2">
+                          <button
+                            className="text-xs text-blue-600 hover:underline"
+                            onClick={() => handleEditAttendance(a)}
+                          >Edit</button>
                           <button
                             className="text-xs text-red-600 hover:underline"
                             onClick={() => handleDeleteAttendance(a.id)}
