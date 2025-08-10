@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import EditAttendanceModal from './EditAttendanceModal';
+import AddAttendanceForm from './AddAttendanceForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck, TrendingUp } from 'lucide-react';
 
@@ -524,76 +525,15 @@ export function TPQDashboardPage({
             <CardTitle className="text-blue-800 font-bold text-base">Tambah Absensi {selectedLevel}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form
-              className="flex flex-col gap-4"
+            <AddAttendanceForm
+              form={form}
+              students={studentsFiltered}
+              onChange={e => setForm(f => ({ ...f, [e.target.name]: e.target.value }))}
               onSubmit={e => {
                 e.preventDefault();
                 handleAddAttendance();
               }}
-            >
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-blue-700">Kegiatan</label>
-                <select
-                  name="kegiatan"
-                  value={form.kegiatan || ''}
-                  onChange={e => setForm(f => ({ ...f, kegiatan: e.target.value }))}
-                  className="w-full px-3 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 bg-white shadow-sm text-base font-normal text-blue-900"
-                  required
-                >
-                  <option value="" disabled className="text-blue-700 italic bg-blue-50">Pilih kegiatan</option>
-                  <option value="KBM">KBM</option>
-                  <option value="KHQ">KHQ</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-blue-700">Pilih Generus</label>
-                <select
-                  name="studentId"
-                  value={form.studentId}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 bg-white shadow-sm text-base font-normal text-blue-900"
-                  required
-                >
-                  <option value="" disabled className="text-blue-700 italic bg-blue-50">Pilih Generus</option>
-                  {studentsFiltered.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-blue-700">Tanggal</label>
-                <input
-                  type="date"
-                  name="date"
-                  value={form.date}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 bg-white shadow-sm text-base font-normal text-blue-900 placeholder:text-blue-700 placeholder:italic"
-                  required
-                  placeholder="Pilih tanggal absensi"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-blue-700">Status</label>
-                <select
-                  name="status"
-                  value={form.status}
-                  onChange={handleFormChange}
-                  className="w-full px-3 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 bg-white shadow-sm text-base font-normal text-blue-900"
-                >
-                  <option value="" disabled className="text-blue-700 italic bg-blue-50">Pilih status</option>
-                  <option value="Hadir">Hadir</option>
-                  <option value="Izin">Izin</option>
-                  <option value="Sakit">Sakit</option>
-                  <option value="Alpa">Alpa</option>
-                </select>
-              </div>
-              <button
-                type="submit"
-                className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow"
-              >
-                Tambah
-              </button>
-            </form>
+            />
           </CardContent>
         </Card>
         {/* Card Tabel Absensi */}
