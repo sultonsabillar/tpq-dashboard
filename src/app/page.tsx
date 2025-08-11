@@ -130,7 +130,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+  <div className="space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-100">
         <div className="flex items-center justify-between">
@@ -172,6 +172,20 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+        </div>
+        {/* Dropdown bulan untuk mobile, di bawah salam */}
+        <div className="block md:hidden w-full flex items-center justify-between gap-2 px-2 pt-4">
+          <label className="text-base font-semibold text-green-700">Bulan</label>
+          <select
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(e.target.value)}
+            className="flex-1 px-3 py-1.5 border border-green-300 rounded focus:outline-none focus:ring-2 focus:ring-green-200 text-base"
+            style={{ color: '#047857', backgroundColor: '#f0fdf4' }}
+          >
+            {monthOptions.map(val => (
+              <option key={val} value={val} className="text-green-700 italic bg-green-50">{getMonthLabel(val)}</option>
+            ))}
+          </select>
         </div>
       </div>
 
