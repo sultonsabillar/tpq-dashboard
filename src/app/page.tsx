@@ -131,20 +131,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Dropdown bulan global */}
-      <div className="mb-4 flex items-center gap-2">
-        <label className="text-xs font-semibold text-green-700">Bulan</label>
-        <select
-          value={selectedMonth}
-          onChange={e => setSelectedMonth(e.target.value)}
-          className="px-2 py-1 border border-green-300 rounded focus:outline-none focus:ring-2 focus:ring-green-200 text-sm"
-          style={{ color: '#047857', backgroundColor: '#f0fdf4' }}
-        >
-          {monthOptions.map(val => (
-            <option key={val} value={val} className="text-green-700 italic bg-green-50">{getMonthLabel(val)}</option>
-          ))}
-        </select>
-      </div>
       {/* Header */}
       <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-100">
         <div className="flex items-center justify-between">
@@ -171,6 +157,19 @@ export default function Dashboard() {
                   day: 'numeric' 
                 })}
               </p>
+              <div className="mt-2 flex items-center justify-end gap-2">
+                <label className="text-base font-semibold text-green-700">Bulan</label>
+                <select
+                  value={selectedMonth}
+                  onChange={e => setSelectedMonth(e.target.value)}
+                  className="px-3 py-1.5 border border-green-300 rounded focus:outline-none focus:ring-2 focus:ring-green-200 text-base"
+                  style={{ color: '#047857', backgroundColor: '#f0fdf4' }}
+                >
+                  {monthOptions.map(val => (
+                    <option key={val} value={val} className="text-green-700 italic bg-green-50">{getMonthLabel(val)}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>

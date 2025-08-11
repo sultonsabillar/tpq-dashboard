@@ -240,9 +240,12 @@ export default function GenerusPage() {
                           <h3 className="text-lg font-semibold text-gray-900 truncate">
                             {student.name}
                           </h3>
-          <span className={`px-2 py-0.5 text-xs font-medium rounded-full flex-shrink-0 ${getLevelBadgeClass(student.level || '')}`}>
+                          <span className={`px-2 py-0.5 text-xs font-medium rounded-full flex-shrink-0 ${getLevelBadgeClass(student.level || '')}`}>
                             {student.level}
                           </span>
+                        </div>
+                        <div className="mb-1">
+                          <span className="text-xs text-gray-400 select-all font-mono">{student.id}</span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
                           {/* ID/Nomor Induk dihapus sesuai permintaan */}
