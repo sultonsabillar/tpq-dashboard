@@ -71,7 +71,7 @@ export function AddStudentForm({ onSave, trigger }: AddStudentFormProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-  <DialogContent className="sm:max-w-[600px] max-h-[90vh] bg-white">
+  <DialogContent className="sm:max-w-[600px] max-h-[90vh] bg-white p-0 sm:p-6 w-screen h-screen max-w-full max-h-screen fixed top-0 left-0 rounded-none z-50 flex flex-col overflow-hidden">
         <DialogHeader className="space-y-3 pb-4 border-b border-gray-100">
           <DialogTitle className="text-xl font-bold flex items-center gap-3">
             <div className="p-2 bg-green-50 rounded-lg border border-green-100">
@@ -93,7 +93,7 @@ export function AddStudentForm({ onSave, trigger }: AddStudentFormProps) {
             </div>
           )}
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6 py-4">
+  <form onSubmit={handleSubmit} className="space-y-6 py-4 flex-1 overflow-y-auto max-h-screen px-4 sm:px-0">
           {/* Section 1: Data Pribadi */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
