@@ -115,7 +115,7 @@ export default function GenerusPage() {
           <h1 className="text-3xl font-bold text-gray-900">Manajemen Generus</h1>
           <p className="text-gray-600">Kelola data generus TPQ</p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="hidden md:flex gap-2 items-center">
           <AddStudentForm
             onSave={addStudent}
             trigger={
@@ -127,13 +127,25 @@ export default function GenerusPage() {
           />
         </div>
       </div>
+      {/* Tombol tambah generus khusus mobile */}
+      <div className="block md:hidden mt-3">
+        <AddStudentForm
+          onSave={addStudent}
+          trigger={
+            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Tambah Generus
+            </Button>
+          }
+        />
+      </div>
 
       {/* Filters */}
       <Card className="shadow-sm border border-gray-200 bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
         <CardContent className="p-5">
-          <div className="flex flex-col sm:flex-row gap-4 mt-2 mb-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-2 mb-4 px-1 sm:px-0">
             {/* Search Input */}
-            <div className="relative flex-1">
+            <div className="relative w-full sm:flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-gray-600" />
               </div>
@@ -155,15 +167,17 @@ export default function GenerusPage() {
               )}
             </div>
             {/* Level Filter */}
-            <div className="flex items-center gap-2 sm:min-w-[200px]">
+            <div className="flex items-center gap-2 w-full sm:w-auto sm:min-w-[200px] pl-1 sm:pl-0">
               <div className="flex items-center gap-2 text-gray-700">
-                <Filter className="h-4 w-4 text-blue-600" />
+                <span className="hidden sm:inline-block">
+                  <Filter className="h-4 w-4 text-blue-600" />
+                </span>
                 <span className="text-sm font-medium hidden sm:inline text-gray-700">Level:</span>
               </div>
               <select
                 value={selectedLevel}
                 onChange={(e) => setSelectedLevel(e.target.value)}
-                className="flex-1 sm:flex-initial px-3 py-2 h-11 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-sm min-w-[120px] text-gray-900 font-medium"
+                className="w-full sm:w-auto px-3 py-2 h-11 border border-gray-300 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white shadow-sm min-w-[120px] text-gray-900 font-medium"
               >
                 {levels.map(level => (
                   <option key={level} value={level}>
@@ -222,8 +236,8 @@ export default function GenerusPage() {
                   key={student.id}
                   className="p-4 border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 bg-white"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-4 flex-1">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-0">
+                    <div className="flex flex-row md:flex-row items-start gap-3 flex-1">
                       {/* Avatar */}
                       <div className={`h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${
                         student.gender === 'Laki-laki' 
@@ -236,28 +250,23 @@ export default function GenerusPage() {
                       </div>
                       {/* Student Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-lg font-semibold text-gray-900 truncate">
+                        <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-2 mb-1">
+                          <h3 className="text-base md:text-lg font-semibold text-gray-900 truncate">
                             {student.name}
                           </h3>
-                          <span className={`px-2 py-0.5 text-xs font-medium rounded-full flex-shrink-0 ${getLevelBadgeClass(student.level || '')}`}>
-                            {student.level}
-                          </span>
+                          <span className={`inline-flex items-center justify-center px-1 md:px-2 py-0.5 text-sm font-medium rounded-full ${getLevelBadgeClass(student.level || '')}`}>{student.level}</span>
                         </div>
                         <div className="mb-1">
                           <span className="text-xs text-gray-400 select-all font-mono">{student.id}</span>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                          {/* ID/Nomor Induk dihapus sesuai permintaan */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-2 text-xs md:text-sm text-gray-600">
                           <div className="flex items-center gap-1">
                             <span className="font-medium text-gray-700">Wali:</span>
                             <span className="truncate">{student.parentName}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="font-medium text-gray-700">TPQ:</span>
-            <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getTPQBadgeClass(student.tpqGroup || '')}`}>
-                              {student.tpqGroup}
-                            </span>
+                            <span className={`inline-flex items-center justify-center px-1 md:px-2 py-0.5 text-sm font-medium rounded-full ${getTPQBadgeClass(student.tpqGroup || '')}`}>{student.tpqGroup}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="font-medium text-gray-700">Info:</span>
@@ -271,7 +280,7 @@ export default function GenerusPage() {
                       </div>
                     </div>
                     {/* Action Buttons */}
-                    <div className="flex items-center space-x-3 ml-6 flex-shrink-0">
+                    <div className="flex flex-col md:flex-row gap-2 md:gap-3 mt-3 md:mt-0">
                       {student && (
                         <EditStudentForm
                           student={student}
@@ -280,7 +289,7 @@ export default function GenerusPage() {
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="px-4 py-2 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-600 hover:text-blue-700 shadow-sm transition-all duration-200 font-medium"
+                              className="px-4 py-2 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300 text-blue-600 hover:text-blue-700 shadow-sm transition-all duration-200 font-medium w-full md:w-auto"
                             >
                               Edit
                             </Button>
@@ -291,7 +300,7 @@ export default function GenerusPage() {
                         variant="outline" 
                         size="sm" 
                         onClick={() => deleteStudent(student.id)}
-                        className="px-4 py-2 bg-red-50 border-red-200 hover:bg-red-100 hover:border-red-300 text-red-600 hover:text-red-700 shadow-sm transition-all duration-200 font-medium"
+                        className="px-4 py-2 bg-red-50 border-red-200 hover:bg-red-100 hover:border-red-300 text-red-600 hover:text-red-700 shadow-sm transition-all duration-200 font-medium w-full md:w-auto"
                       >
                         Hapus
                       </Button>
