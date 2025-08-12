@@ -265,7 +265,7 @@ export default function GenerusPage() {
                             <span className={`inline-flex items-center justify-center px-1 md:px-2 py-0.5 text-sm font-medium rounded-full ${getTPQBadgeClass(student.tpqGroup || '')}`}>{student.tpqGroup}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <span className="font-medium text-gray-700">Info:</span>
+                            <span className="font-medium text-gray-700">Usia:</span>
                             <span>
                               {student.dateOfBirth ? (() => {
                                 const { years, months, days } = calculateDetailedAge(student.dateOfBirth);
