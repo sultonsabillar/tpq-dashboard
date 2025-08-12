@@ -109,8 +109,8 @@ export function TPQDashboardPage({
   }
   // State bulan terpilih
   const currentMonthKey = `${currentYearNum}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  // Jika ada data, default ke bulan terbaru, jika tidak, default ke bulan saat ini
-  const [selectedMonth, setSelectedMonth] = useState<string>(monthOptions.length > 0 ? monthOptions[0] : currentMonthKey);
+  // Default ke bulan berjalan (current month)
+  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthKey);
 
   // Filter students untuk TPQ & level terpilih
   const studentsFiltered = students.filter(

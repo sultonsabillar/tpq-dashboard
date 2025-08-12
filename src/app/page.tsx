@@ -24,7 +24,7 @@ export default function Dashboard() {
     return new Date(2000, Number(month) - 1).toLocaleString('id-ID', { month: 'long' });
   }
   const currentMonthKey = `${currentYearNum}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const [selectedMonth, setSelectedMonth] = useState<string>(monthOptions[0]);
+  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthKey);
   const [stats, setStats] = useState<DashboardStats>({
     totalStudents: 0,
     activeStudents: 0,
