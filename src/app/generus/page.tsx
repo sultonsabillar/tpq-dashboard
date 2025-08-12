@@ -5,15 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, Filter } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-// import { Button } from '@/components/ui/button';
-// import { Input } from '@/components/ui/input';
-// import { Plus, Search, Filter } from 'lucide-react';
-
 import { Student } from '@/types';
-import { getInitials, getLevelBadgeClass, getTPQBadgeClass } from '@/lib/utils';
+import { getInitials, getLevelBadgeClass, getTPQBadgeClass, calculateDetailedAge } from '@/lib/utils';
 import { AddStudentForm } from '@/components/students/add-student-form';
 import { EditStudentForm } from '@/components/students/edit-student-form';
-// import { StudentForm } from '@/components/students/student-form';
+
 
 
 export default function GenerusPage() {
@@ -270,7 +266,17 @@ export default function GenerusPage() {
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="font-medium text-gray-700">Info:</span>
-                            <span>{student.dateOfBirth ? (new Date().getFullYear() - new Date(student.dateOfBirth).getFullYear()) : '-'} tahun • {student.gender}</span>
+                            <span>
+                              {student.dateOfBirth ? (() => {
+                                const { years, months, days } = calculateDetailedAge(student.dateOfBirth);
+                                let result = '';
+                                if (years > 0) result += years + ' tahun ';
+                                if (months > 0) result += months + ' bulan ';
+                                if (days > 0) result += days + ' hari';
+                                return result.trim() || '-';
+                              })() : '-'}
+                              {' • '}{student.gender}
+                            </span>
                           </div>
                           <div className="flex items-center gap-1 md:col-span-2">
                             <span className="font-medium text-gray-700">Sekolah:</span>
