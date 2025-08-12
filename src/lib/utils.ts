@@ -1,3 +1,27 @@
+// Hitung umur detail (tahun, bulan, hari)
+export function calculateDetailedAge(dateOfBirth: string): { years: number; months: number; days: number } {
+  try {
+    const birthDate = new Date(dateOfBirth);
+    const today = new Date();
+    let years = today.getFullYear() - birthDate.getFullYear();
+    let months = today.getMonth() - birthDate.getMonth();
+    let days = today.getDate() - birthDate.getDate();
+
+    if (days < 0) {
+      months--;
+      // Ambil jumlah hari di bulan sebelumnya
+      const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+      days += prevMonth.getDate();
+    }
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+    return { years, months, days };
+  } catch {
+    return { years: 0, months: 0, days: 0 };
+  }
+}
 import { type ClassValue, clsx } from 'clsx';
 import { format, parseISO, isValid } from 'date-fns';
 import { id } from 'date-fns/locale';
