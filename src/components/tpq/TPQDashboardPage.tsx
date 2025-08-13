@@ -338,9 +338,9 @@ export function TPQDashboardPage({
           <CardContent className="relative p-8 pt-10">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600 mb-3">Progress Rata-Rata Hapalan Bulan Ini</p>
+                <p className="text-sm font-medium text-gray-600 mb-3">Progress Materi Generus {tpqGroup}</p>
                 <p className="text-3xl font-bold text-orange-700 mb-2">{Math.round(memorizationProgress * 100)}%</p>
-                <p className="text-xs text-gray-500 mb-4">Target hapalan bulan ini</p>
+                <p className="text-xs text-gray-500 mb-4">Ketercapaian materi generus {tpqGroup}</p>
               </div>
               <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 shadow-lg">
                 <TrendingUp className="h-6 w-6 text-white" />
