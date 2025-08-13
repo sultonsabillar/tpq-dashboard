@@ -448,35 +448,38 @@ export function TPQDashboardPage({
               </thead>
               <tbody className="bg-white divide-y divide-blue-100">
                 {studentsFiltered.map((s, idx) => {
-                  // KBM
-                  const absensiKBM = attendance.filter(a => {
-                    if (a.studentId !== s.id) return false;
-                    if (!('activityType' in a) || a.activityType !== 'KBM') return false;
-                    const tgl = new Date(a.date);
-                    return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
-                  });
-                  const totalKBM = attendance.filter(a => {
-                    if (a.studentId !== s.id) return false;
-                    if (!('activityType' in a) || a.activityType !== 'KBM') return false;
-                    const tgl = new Date(a.date);
-                    return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear;
-                  }).length;
-                  const persenKBM = totalKBM > 0 ? Math.round((absensiKBM.length / totalKBM) * 100) : 0;
 
-                  // KHQ
-                  const absensiKHQ = attendance.filter(a => {
+                  // KBM - hitung semua status
+                  const absensiKBMBulanIni = attendance.filter(a => {
                     if (a.studentId !== s.id) return false;
-                    if (!('activityType' in a) || a.activityType !== 'KHQ') return false;
+                    if (!('activityType' in a) || a.activityType !== 'KBM') return false;
                     const tgl = new Date(a.date);
-                    return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear && a.status === 'Hadir';
+                    return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear;
                   });
-                  const totalKHQ = attendance.filter(a => {
+                  const countKBM = {
+                    Hadir: absensiKBMBulanIni.filter(a => a.status === 'Hadir').length,
+                    Izin: absensiKBMBulanIni.filter(a => a.status === 'Izin').length,
+                    Sakit: absensiKBMBulanIni.filter(a => a.status === 'Sakit').length,
+                    Alpa: absensiKBMBulanIni.filter(a => a.status === 'Alpa').length,
+                  };
+                  const totalKBM = absensiKBMBulanIni.length;
+                  const persenKBM = totalKBM > 0 ? Math.round((countKBM.Hadir / totalKBM) * 100) : 0;
+
+                  // KHQ - hitung semua status
+                  const absensiKHQBulanIni = attendance.filter(a => {
                     if (a.studentId !== s.id) return false;
                     if (!('activityType' in a) || a.activityType !== 'KHQ') return false;
                     const tgl = new Date(a.date);
                     return tgl.getMonth() + 1 === currentMonth && tgl.getFullYear() === currentYear;
-                  }).length;
-                  const persenKHQ = totalKHQ > 0 ? Math.round((absensiKHQ.length / totalKHQ) * 100) : 0;
+                  });
+                  const countKHQ = {
+                    Hadir: absensiKHQBulanIni.filter(a => a.status === 'Hadir').length,
+                    Izin: absensiKHQBulanIni.filter(a => a.status === 'Izin').length,
+                    Sakit: absensiKHQBulanIni.filter(a => a.status === 'Sakit').length,
+                    Alpa: absensiKHQBulanIni.filter(a => a.status === 'Alpa').length,
+                  };
+                  const totalKHQ = absensiKHQBulanIni.length;
+                  const persenKHQ = totalKHQ > 0 ? Math.round((countKHQ.Hadir / totalKHQ) * 100) : 0;
 
                   return (
                     <tr key={s.id} className="hover:bg-blue-50">
@@ -496,13 +499,13 @@ export function TPQDashboardPage({
                       <td className="px-4 py-2 text-sm text-green-700 font-bold">
                         {persenKBM}%
                         <div className="text-xs text-gray-500 font-normal">
-                          ({absensiKBM.length} hadir / {totalKBM} pertemuan)
+                          ({countKBM.Hadir} hadir, {countKBM.Izin} izin, {countKBM.Sakit} sakit, {countKBM.Alpa} alpa / {totalKBM} pertemuan)
                         </div>
                       </td>
                       <td className="px-4 py-2 text-sm text-purple-700 font-bold">
                         {persenKHQ}%
                         <div className="text-xs text-gray-500 font-normal">
-                          ({absensiKHQ.length} hadir / {totalKHQ} pertemuan)
+                          ({countKHQ.Hadir} hadir, {countKHQ.Izin} izin, {countKHQ.Sakit} sakit, {countKHQ.Alpa} alpa / {totalKHQ} pertemuan)
                         </div>
                       </td>
                     </tr>
