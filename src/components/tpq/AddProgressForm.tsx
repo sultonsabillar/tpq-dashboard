@@ -38,10 +38,11 @@ export default function AddProgressForm({ form, students, onChange, onSubmit }: 
   function handleTargetChange(targetName: string, value: string) {
     setTargetStatus(prev => ({ ...prev, [targetName]: value }));
   }
-  return (
-    <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-      <CardContent className="p-6">
-        <form className="flex flex-col gap-4 w-full" onSubmit={onSubmit}>
+    return (
+      <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <CardContent className="p-6">
+          <h2 className="text-lg font-bold text-black mb-4">Form Progress Materi</h2>
+          <form className="flex flex-col gap-4 w-full" onSubmit={onSubmit}>
           {/* Student Info */}
           <div className="flex flex-col gap-1">
             <div className="flex flex-col md:flex-row gap-2 md:gap-6 mb-1 mt-2 md:mt-4 justify-between">
