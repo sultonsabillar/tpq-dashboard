@@ -614,7 +614,7 @@ export function TPQDashboardPage({
       </div>
 
       {/* Form Progress Materi */}
-      <div className="mt-6 max-w-xl">
+  <div className="mt-6 w-full">
         <AddProgressForm
           form={progressForm}
           students={studentsFiltered}
