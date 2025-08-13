@@ -94,9 +94,9 @@ export default function Dashboard() {
       changeType: 'increase',
     },
     {
-      title: 'Progress Hafalan',
-      //value: `${stats.attendanceRate}%`,
-      subtitle: 'Rata-rata Hapalan Generus Desa',
+      title: 'Progress Materi Generus Desa',
+      value: `${stats.attendanceRate}%`,
+      subtitle: 'Ketercapaian materi generus desa',
       icon: TrendingUp,
       gradient: 'from-orange-500 to-amber-600',
       bgGradient: 'from-orange-50 to-amber-100',
