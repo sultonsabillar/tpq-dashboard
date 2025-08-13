@@ -1,7 +1,8 @@
 "use client";
-import React, { useState } from 'react';
+import React from 'react';
 import EditAttendanceModal from './EditAttendanceModal';
 import AddAttendanceForm from './AddAttendanceForm';
+import AddProgressForm from './AddProgressForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCheck, TrendingUp } from 'lucide-react';
 
@@ -50,17 +51,30 @@ export function TPQDashboardPage({
   colors,
   info,
 }: TPQDashboardPageProps) {
-  const [selectedLevel, setSelectedLevel] = useState<string>(levels[0]);
-  const [form, setForm] = useState<{ studentId: string; date: string; status: string; kegiatan?: string }>({ studentId: '', date: '', status: '', kegiatan: '' });
-  const [attendance, setAttendance] = useState<Attendance[]>(attendanceProp);
+  const [selectedLevel, setSelectedLevel] = React.useState<string>(levels[0]);
+  // State & handler untuk form progress materi
+  const [progressForm, setProgressForm] = React.useState<{ studentId: string; tanggal: string; materi: string; capaian: string }>({ studentId: '', tanggal: '', materi: '', capaian: '' });
+
+  function handleProgressFormChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
+    setProgressForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  }
+
+  function handleAddProgress(e: React.FormEvent) {
+    e.preventDefault();
+    // TODO: Integrasi ke backend atau state progress materi
+    alert('Progress materi berhasil ditambahkan! (dummy)');
+    setProgressForm({ studentId: '', tanggal: '', materi: '', capaian: '' });
+  }
+  const [form, setForm] = React.useState<{ studentId: string; date: string; status: string; kegiatan?: string }>({ studentId: '', date: '', status: '', kegiatan: '' });
+  const [attendance, setAttendance] = React.useState<Attendance[]>(attendanceProp);
   // State & handler edit absensi (sederhana, bisa dikembangkan modal/form)
-  const [editingAttendance, setEditingAttendance] = useState<Attendance | null>(null);
+  const [editingAttendance, setEditingAttendance] = React.useState<Attendance | null>(null);
   function handleEditAttendance(a: Attendance) {
     setEditingAttendance(a);
   }
 
   // State untuk form edit
-  const [editForm, setEditForm] = useState<{ studentId: string; date: string; status: string; kegiatan?: string }>({ studentId: '', date: '', status: '', kegiatan: '' });
+  const [editForm, setEditForm] = React.useState<{ studentId: string; date: string; status: string; kegiatan?: string }>({ studentId: '', date: '', status: '', kegiatan: '' });
   // Sync editForm saat editingAttendance berubah
   React.useEffect(() => {
     if (editingAttendance) {
@@ -110,7 +124,7 @@ export function TPQDashboardPage({
   // State bulan terpilih
   const currentMonthKey = `${currentYearNum}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   // Default ke bulan berjalan (current month)
-  const [selectedMonth, setSelectedMonth] = useState<string>(currentMonthKey);
+  const [selectedMonth, setSelectedMonth] = React.useState<string>(currentMonthKey);
 
   // Filter students untuk TPQ & level terpilih
   const studentsFiltered = students.filter(
@@ -597,6 +611,16 @@ export function TPQDashboardPage({
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Form Progress Materi */}
+      <div className="mt-6 max-w-xl">
+        <AddProgressForm
+          form={progressForm}
+          students={studentsFiltered}
+          onChange={handleProgressFormChange}
+          onSubmit={handleAddProgress}
+        />
       </div>
     </div>
   );
