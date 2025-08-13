@@ -614,14 +614,16 @@ export function TPQDashboardPage({
       </div>
 
       {/* Form Progress Materi */}
-  <div className="mt-6 w-full">
-        <AddProgressForm
-          form={progressForm}
-          students={studentsFiltered}
-          onChange={handleProgressFormChange}
-          onSubmit={handleAddProgress}
-        />
-      </div>
+      {tpqGroup && !tpqGroup.trim().toLowerCase().includes('desa') && (
+        <div className="mt-6 w-full">
+          <AddProgressForm
+            form={progressForm}
+            students={studentsFiltered}
+            onChange={handleProgressFormChange}
+            onSubmit={handleAddProgress}
+          />
+        </div>
+      )}
     </div>
   );
 }
