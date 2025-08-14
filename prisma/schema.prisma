@@ -21,6 +21,7 @@ model Student {
   level        String
   isActive     Boolean @default(true)
   attendances  Attendance[]
+  progressMateri  ProgressMateri[]
   createdAt    DateTime @default(now())
 }
 
@@ -32,4 +33,17 @@ model Attendance {
   status       String
   activityType String   // KBM atau KHQ
   createdAt    DateTime @default(now())
+}
+
+model ProgressMateri {
+  id          String   @id @default(uuid())
+  student     Student  @relation(fields: [studentId], references: [id])
+  studentId   String
+  semester    String   // "Semester 1" atau "Semester 2"
+  category    String   // "Surat" atau "Doa"
+  target      String   // Nama surat/doa
+  status      String   // "Tercapai" atau "Belum Tercapai"
+  createdAt   DateTime @default(now())
+
+  @@unique([studentId, semester, category, target])
 }
