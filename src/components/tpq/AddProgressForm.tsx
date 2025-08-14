@@ -43,7 +43,7 @@ export default function AddProgressForm({
   setSelectedSemester,
   targetCategories,
   setTargetCategories,
-  progressMateriList
+  progressMateriList = []
 }: AddProgressFormProps) {
   // Ambil data siswa terpilih
   const selectedStudent = students.find(s => s.id === form.studentId);
@@ -153,10 +153,14 @@ export default function AddProgressForm({
                   <div className="font-bold text-green-700 mb-1">{category.category}</div>
                   {category.items.map(target => {
                     // Cari status dari DB jika ada
-                    const dbItem = progressMateriList.find(
+                    const safeList = Array.isArray(progressMateriList) ? progressMateriList : [];
+                    const dbItem = safeList.find(
                       (item) => item.category === category.category && item.target === target
                     );
-                    const value = dbItem ? dbItem.status : targetStatus[target] || '';
+                    // UX: jika user sudah mengubah (ada di targetStatus dan tidak kosong), pakai itu. Jika tidak, pakai dari DB
+                    const value = (targetStatus[target] !== undefined && targetStatus[target] !== '')
+                      ? targetStatus[target]
+                      : (dbItem ? dbItem.status : '');
                     return (
                       <div key={target} className="flex items-center gap-2 border-b border-blue-50 pb-2">
                         <span className="flex-1 text-base text-blue-900 font-semibold">{target}</span>
@@ -164,10 +168,20 @@ export default function AddProgressForm({
                           value={value}
                           onChange={e => handleTargetChange(target, e.target.value)}
                           className="px-2 py-1 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 bg-white shadow-sm text-sm text-blue-900"
+                          style={{
+                            backgroundColor:
+                              value === 'Tercapai' ? '#22c55e' : // green-500
+                              value === 'Belum Tercapai' ? '#facc15' : // yellow-400
+                              value === '' ? '#d1d5db' : undefined, // gray-300
+                            color:
+                              value === 'Tercapai' ? '#fff' :
+                              value === 'Belum Tercapai' ? '#7c5700' :
+                              value === '' ? '#374151' : undefined,
+                          }}
                         >
-                          <option value="" disabled className="text-blue-700 italic bg-blue-50">Pilih status capaian</option>
-                          <option value="Tercapai">Tercapai</option>
-                          <option value="Belum Tercapai">Belum Tercapai</option>
+                          <option value="" disabled className="text-gray-700 bg-gray-300">Belum Di Ajarkan</option>
+                          <option value="Tercapai" className="text-white bg-green-500">Tercapai</option>
+                          <option value="Belum Tercapai" className="text-yellow-900 bg-yellow-400">Belum Tercapai</option>
                         </select>
                       </div>
                     );

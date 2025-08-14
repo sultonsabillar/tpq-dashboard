@@ -59,11 +59,70 @@ export function TPQDashboardPage({
     setProgressForm(f => ({ ...f, [e.target.name]: e.target.value }));
   }
 
-  function handleAddProgress(e: React.FormEvent) {
+  // State untuk target materi progress
+  const [progressCategories, setProgressCategories] = React.useState<any[]>([]);
+  // State untuk semester progress materi
+  const [progressSemester, setProgressSemester] = React.useState<'Semester 1' | 'Semester 2'>('Semester 1');
+
+  // State untuk status target progress materi
+  const [progressTargetStatus, setProgressTargetStatus] = React.useState<{ [key: string]: string }>({});
+  // State untuk progress materi dari DB
+  const [progressMateriList, setProgressMateriList] = React.useState<any[]>([]);
+
+  // Fetch progress materi dari DB setiap kali student/semester berubah
+  React.useEffect(() => {
+    if (progressForm.studentId && progressSemester) {
+      fetch(`/api/progress-materi?studentId=${progressForm.studentId}&semester=${progressSemester}`)
+        .then(res => res.json())
+        .then(data => {
+          setProgressMateriList(Array.isArray(data) ? data : []);
+        });
+    } else {
+      setProgressMateriList([]);
+    }
+  }, [progressForm.studentId, progressSemester]);
+
+  async function handleAddProgress(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: Integrasi ke backend atau state progress materi
-    alert('Progress materi berhasil ditambahkan! (dummy)');
-    setProgressForm({ studentId: '', tanggal: '', materi: '', capaian: '' });
+    // Kirim data progress materi satu per satu ke backend
+    try {
+      const entries = Object.entries(progressTargetStatus);
+      let errorCount = 0;
+      for (const [target, status] of entries) {
+        // Cari kategori dari target
+        let category = '';
+        for (const cat of progressCategories) {
+          if (cat.items.includes(target)) {
+            category = cat.category;
+            break;
+          }
+        }
+        if (!category) continue; // skip jika tidak ketemu
+        if (!status) continue; // skip jika status kosong/null
+        const payload = {
+          studentId: progressForm.studentId,
+          semester: progressSemester,
+          category,
+          target,
+          status,
+        };
+        console.log('Kirim progress:', payload); // debug
+        const res = await fetch('/api/progress-materi', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) errorCount++;
+      }
+      if (errorCount === 0) {
+        alert('Progress materi berhasil ditambahkan!');
+        setProgressForm({ studentId: '', tanggal: '', materi: '', capaian: '' });
+      } else {
+        alert('Beberapa progress gagal disimpan.');
+      }
+    } catch (err) {
+      alert('Gagal menambah progress materi: ' + err);
+    }
   }
   const [form, setForm] = React.useState<{ studentId: string; date: string; status: string; kegiatan?: string }>({ studentId: '', date: '', status: '', kegiatan: '' });
   const [attendance, setAttendance] = React.useState<Attendance[]>(attendanceProp);
@@ -621,6 +680,13 @@ export function TPQDashboardPage({
             students={studentsFiltered}
             onChange={handleProgressFormChange}
             onSubmit={handleAddProgress}
+            targetCategories={progressCategories}
+            setTargetCategories={setProgressCategories}
+            targetStatus={progressTargetStatus}
+            setTargetStatus={setProgressTargetStatus}
+            selectedSemester={progressSemester}
+            setSelectedSemester={setProgressSemester}
+            progressMateriList={progressMateriList}
           />
         </div>
       )}
