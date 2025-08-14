@@ -41,7 +41,7 @@ export default function AddProgressForm({ form, students, onChange, onSubmit }: 
     return (
       <Card className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         <CardContent className="p-6">
-          <h2 className="text-lg font-bold text-black mb-4">Form Progress Materi</h2>
+          <h2 className="text-lg font-bold text-blue-700 mb-4 mt-2 md:mt-4">Form Progress Materi</h2>
           <form className="flex flex-col gap-4 w-full" onSubmit={onSubmit}>
           {/* Student Info */}
           <div className="flex flex-col gap-1">
@@ -125,7 +125,7 @@ export default function AddProgressForm({ form, students, onChange, onSubmit }: 
               )}
               {targetCategories.map(category => (
                 <div key={category.category} className="mb-2">
-                  <div className="font-bold text-blue-700 mb-1">{category.category}</div>
+                  <div className="font-bold text-green-700 mb-1">{category.category}</div>
                   {category.items.map(target => (
                     <div key={target} className="flex items-center gap-2 border-b border-blue-50 pb-2">
                       <span className="flex-1 text-base text-blue-900 font-semibold">{target}</span>
