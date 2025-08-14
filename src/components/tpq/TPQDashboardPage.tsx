@@ -412,7 +412,7 @@ export function TPQDashboardPage({
           </Card>
           <Card className="border-0 shadow-md">
             <CardContent className="p-4 flex flex-col items-center">
-              <span className="text-xs text-gray-500 mb-1">Hapalan {selectedLevel}</span>
+              <span className="text-xs text-gray-500 mb-1">Progress Materi {selectedLevel}</span>
               <span className="text-2xl font-bold text-orange-700">{Math.round(memorizationProgress * 100)}%</span>
             </CardContent>
           </Card>
