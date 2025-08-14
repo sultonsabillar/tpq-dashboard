@@ -1,7 +1,9 @@
 import React from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { getLevelBadgeClass, getTPQBadgeClass, calculateDetailedAge } from '@/lib/utils';
-import { getTargetsForStudent, Semester, TargetCategory } from '@/utils/targetMateri';
+import { getTargetsForStudent } from '@/utils/targetMateri';
+import type { Semester, TargetCategory } from '@/utils/targetMateri';
 
 interface Student {
   id: string;
@@ -14,27 +16,50 @@ interface Student {
   gender?: string;
 }
 
-interface AddProgressFormProps {
+// HAPUS deklarasi properti props yang berdiri sendiri di sini, cukup gunakan type AddProgressFormProps di bawah
+type AddProgressFormProps = {
   form: { studentId: string; tanggal: string };
   students: Student[];
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
-}
+  targetStatus: { [key: string]: string };
+  setTargetStatus: Dispatch<SetStateAction<{ [key: string]: string }>>;
+  selectedSemester: Semester;
+  setSelectedSemester: Dispatch<SetStateAction<Semester>>;
+  targetCategories: TargetCategory[];
+  setTargetCategories: Dispatch<SetStateAction<TargetCategory[]>>;
+  progressMateriList: any[];
+};
 
 // (semua logic dipindah ke dalam komponen di bawah)
-export default function AddProgressForm({ form, students, onChange, onSubmit }: AddProgressFormProps) {
+export default function AddProgressForm({
+  form,
+  students,
+  onChange,
+  onSubmit,
+  targetStatus,
+  setTargetStatus,
+  selectedSemester,
+  setSelectedSemester,
+  targetCategories,
+  setTargetCategories,
+  progressMateriList
+}: AddProgressFormProps) {
   // Ambil data siswa terpilih
   const selectedStudent = students.find(s => s.id === form.studentId);
-  const [selectedSemester, setSelectedSemester] = React.useState<Semester>('Semester 1');
-  const targetCategories: TargetCategory[] = getTargetsForStudent(selectedStudent, selectedSemester);
-  // State: { [targetName]: status }
-  const allTargets = targetCategories.flatMap(cat => cat.items);
-  const [targetStatus, setTargetStatus] = React.useState<{ [key: string]: string }>(
-    Object.fromEntries(allTargets.map(t => [t, '']))
-  );
+  // Update targetCategories jika student/semester berubah
   React.useEffect(() => {
-    setTargetStatus(Object.fromEntries(allTargets.map(t => [t, ''])));
-  }, [form.studentId, selectedSemester, JSON.stringify(allTargets)]);
+    if (selectedStudent && (selectedSemester === 'Semester 1' || selectedSemester === 'Semester 2')) {
+      const cats = getTargetsForStudent(selectedStudent, selectedSemester);
+      setTargetCategories(cats);
+      // Reset status target jika student/semester berubah
+      const allTargets = cats.flatMap(cat => cat.items);
+      setTargetStatus(Object.fromEntries(allTargets.map(t => [t, ''])));
+    } else {
+      setTargetCategories([]);
+      setTargetStatus({});
+    }
+  }, [selectedStudent, selectedSemester, setTargetCategories, setTargetStatus]);
   function handleTargetChange(targetName: string, value: string) {
     setTargetStatus(prev => ({ ...prev, [targetName]: value }));
   }
@@ -120,26 +145,33 @@ export default function AddProgressForm({ form, students, onChange, onSubmit }: 
             {/* Semester sudah di atas, tidak perlu di sini */}
             <label className="text-lg font-bold text-black mb-1">Target Materi</label>
             <div className="flex flex-col gap-2">
-              {targetCategories.length === 0 && (
+              {(!targetCategories || targetCategories.length === 0) && (
                 <span className="text-sm text-gray-400 italic">Pilih siswa dan semester untuk melihat target materi</span>
               )}
-              {targetCategories.map(category => (
+              {Array.isArray(targetCategories) && targetCategories.map(category => (
                 <div key={category.category} className="mb-2">
                   <div className="font-bold text-green-700 mb-1">{category.category}</div>
-                  {category.items.map(target => (
-                    <div key={target} className="flex items-center gap-2 border-b border-blue-50 pb-2">
-                      <span className="flex-1 text-base text-blue-900 font-semibold">{target}</span>
-                      <select
-                        value={targetStatus[target]}
-                        onChange={e => handleTargetChange(target, e.target.value)}
-                        className="px-2 py-1 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 bg-white shadow-sm text-sm text-blue-900"
-                      >
-                        <option value="" disabled className="text-blue-700 italic bg-blue-50">Pilih status capaian</option>
-                        <option value="Tercapai">Tercapai</option>
-                        <option value="Belum Tercapai">Belum Tercapai</option>
-                      </select>
-                    </div>
-                  ))}
+                  {category.items.map(target => {
+                    // Cari status dari DB jika ada
+                    const dbItem = progressMateriList.find(
+                      (item) => item.category === category.category && item.target === target
+                    );
+                    const value = dbItem ? dbItem.status : targetStatus[target] || '';
+                    return (
+                      <div key={target} className="flex items-center gap-2 border-b border-blue-50 pb-2">
+                        <span className="flex-1 text-base text-blue-900 font-semibold">{target}</span>
+                        <select
+                          value={value}
+                          onChange={e => handleTargetChange(target, e.target.value)}
+                          className="px-2 py-1 border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500 bg-white shadow-sm text-sm text-blue-900"
+                        >
+                          <option value="" disabled className="text-blue-700 italic bg-blue-50">Pilih status capaian</option>
+                          <option value="Tercapai">Tercapai</option>
+                          <option value="Belum Tercapai">Belum Tercapai</option>
+                        </select>
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </div>
